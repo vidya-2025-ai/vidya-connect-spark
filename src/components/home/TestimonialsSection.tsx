@@ -44,7 +44,7 @@ const TestimonialsSection = () => {
               </div>
               <div className="mt-4 flex items-center">
                 <Avatar className="h-12 w-12 rounded-full">
-                  <AvatarFallback className="bg-vs-purple-100 text-vs-purple-600">
+                  <AvatarFallback className="bg-blue-100 text-[#007bff]">
                     {testimonial.author.split(' ').map(name => name[0]).join('')}
                   </AvatarFallback>
                 </Avatar>

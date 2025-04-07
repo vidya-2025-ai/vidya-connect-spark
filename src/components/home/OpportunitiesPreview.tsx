@@ -22,7 +22,7 @@ const opportunities = [
     duration: '3 months',
     category: 'Environmental',
     icon: Globe,
-    color: 'bg-emerald-100 text-emerald-800'
+    color: 'bg-blue-100 text-[#007bff]'
   },
   {
     id: 2,
@@ -33,7 +33,7 @@ const opportunities = [
     duration: '2 months',
     category: 'Technology',
     icon: BookOpen,
-    color: 'bg-blue-100 text-blue-800'
+    color: 'bg-sky-100 text-[#00d4ff]'
   },
   {
     id: 3,
@@ -44,7 +44,7 @@ const opportunities = [
     duration: '4 months',
     category: 'Social Work',
     icon: Users,
-    color: 'bg-amber-100 text-amber-800'
+    color: 'bg-blue-100 text-[#007bff]'
   }
 ];
 
@@ -70,7 +70,7 @@ const OpportunitiesPreview = () => {
               <div className="p-6 flex-grow">
                 <div className="flex justify-between items-start">
                   <h3 className="text-lg font-medium text-gray-900">{opportunity.title}</h3>
-                  <span className="vs-badge bg-vs-purple-100 text-vs-purple-700">
+                  <span className="vs-badge bg-blue-100 text-[#007bff]">
                     {opportunity.type === 'internship' ? 'Internship' : 'Project'}
                   </span>
                 </div>
@@ -92,7 +92,7 @@ const OpportunitiesPreview = () => {
                 </div>
               </div>
               <div className="px-6 pb-6">
-                <Button variant="outline" className="w-full text-vs-green-600 border-vs-green-600 hover:bg-vs-green-50">
+                <Button variant="outline" className="w-full text-[#007bff] border-[#007bff] hover:bg-blue-50">
                   View Details
                 </Button>
               </div>

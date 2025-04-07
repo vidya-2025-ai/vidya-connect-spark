@@ -14,16 +14,16 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 140 46% 51%; /* vs-green-500 */
+    --primary: 210 100% 50%; /* Blue #007bff */
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 30 100% 64%; /* vs-orange-400 */
+    --secondary: 195 100% 50%; /* Light Blue #00d4ff */
     --secondary-foreground: 222.2 47.4% 11.2%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 270 94% 76%; /* vs-purple-400 */
+    --accent: 195 100% 50%; /* Light Blue #00d4ff */
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
@@ -31,18 +31,18 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 140 46% 51%; /* vs-green-500 */
+    --ring: 210 100% 50%; /* Blue #007bff */
 
     --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 140 46% 51%; /* vs-green-500 */
+    --sidebar-primary: 210 100% 50%; /* Blue #007bff */
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 270 94% 76%; /* vs-purple-400 */
+    --sidebar-ring: 195 100% 50%; /* Light Blue #00d4ff */
   }
 
   .dark {
@@ -55,16 +55,16 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 142 63% 42%; /* vs-green-600 */
+    --primary: 210 100% 50%; /* Blue #007bff */
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 30 100% 64%; /* vs-orange-400 */
+    --secondary: 195 100% 50%; /* Light Blue #00d4ff */
     --secondary-foreground: 210 40% 98%;
 
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 267 83% 59%; /* vs-purple-600 */
+    --accent: 195 100% 50%; /* Light Blue #00d4ff */
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
@@ -72,16 +72,16 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 142 63% 42%; /* vs-green-600 */
+    --ring: 210 100% 50%; /* Blue #007bff */
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 142 63% 42%; /* vs-green-600 */
+    --sidebar-primary: 210 100% 50%; /* Blue #007bff */
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 267 83% 59%; /* vs-purple-600 */
+    --sidebar-ring: 195 100% 50%; /* Light Blue #00d4ff */
   }
 }
 
@@ -106,19 +106,19 @@
   }
 
   .vs-btn-primary {
-    @apply bg-vs-green-500 hover:bg-vs-green-600 text-white transition-colors;
+    @apply bg-[#007bff] hover:bg-blue-600 text-white transition-colors;
   }
 
   .vs-btn-secondary {
-    @apply bg-vs-orange-400 hover:bg-vs-orange-500 text-white transition-colors;
+    @apply bg-[#00d4ff] hover:bg-blue-400 text-white transition-colors;
   }
 
   .vs-btn-accent {
-    @apply bg-vs-purple-400 hover:bg-vs-purple-500 text-white transition-colors;
+    @apply bg-[#00d4ff] hover:bg-blue-400 text-white transition-colors;
   }
 
   .vs-input-focus {
-    @apply focus:border-vs-green-500 focus:ring-vs-green-500;
+    @apply focus:border-[#007bff] focus:ring-[#007bff];
   }
 
   .section-title {

@@ -17,7 +17,7 @@ const Navbar = () => {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
-              <span className="h-8 w-8 rounded-full bg-gradient-to-br from-vs-green-500 to-vs-purple-400 flex items-center justify-center">
+              <span className="h-8 w-8 rounded-full bg-gradient-to-br from-[#007bff] to-[#00d4ff] flex items-center justify-center">
                 <span className="text-white font-bold text-lg">VS</span>
               </span>
               <span className="ml-2 text-xl font-bold text-gray-800">Vidya-Samveda</span>
@@ -26,18 +26,18 @@ const Navbar = () => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex md:items-center md:space-x-4">
-            <Link to="/explore" className="text-gray-600 hover:text-vs-green-600 px-3 py-2 rounded-md text-sm font-medium">
+            <Link to="/explore" className="text-gray-600 hover:text-[#007bff] px-3 py-2 rounded-md text-sm font-medium">
               Explore
             </Link>
-            <Link to="/about" className="text-gray-600 hover:text-vs-green-600 px-3 py-2 rounded-md text-sm font-medium">
+            <Link to="/about" className="text-gray-600 hover:text-[#007bff] px-3 py-2 rounded-md text-sm font-medium">
               About
             </Link>
-            <Link to="/how-it-works" className="text-gray-600 hover:text-vs-green-600 px-3 py-2 rounded-md text-sm font-medium">
+            <Link to="/how-it-works" className="text-gray-600 hover:text-[#007bff] px-3 py-2 rounded-md text-sm font-medium">
               How It Works
             </Link>
             <div className="ml-4 flex items-center space-x-2">
               <Link to="/login">
-                <Button variant="outline" className="text-vs-green-600 border-vs-green-600 hover:bg-vs-green-50">
+                <Button variant="outline" className="text-[#007bff] border-[#007bff] hover:bg-blue-50">
                   Log In
                 </Button>
               </Link>
@@ -51,7 +51,7 @@ const Navbar = () => {
           <div className="md:hidden flex items-center">
             <button
               onClick={toggleMenu}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-vs-green-600 focus:outline-none"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-[#007bff] focus:outline-none"
             >
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -64,26 +64,26 @@ const Navbar = () => {
         <div className="md:hidden bg-white border-b border-gray-200 px-2 pt-2 pb-3 space-y-1 sm:px-3">
           <Link
             to="/explore"
-            className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-vs-green-600 hover:bg-gray-50"
+            className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-[#007bff] hover:bg-gray-50"
           >
             Explore
           </Link>
           <Link
             to="/about"
-            className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-vs-green-600 hover:bg-gray-50"
+            className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-[#007bff] hover:bg-gray-50"
           >
             About
           </Link>
           <Link
             to="/how-it-works"
-            className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-vs-green-600 hover:bg-gray-50"
+            className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-[#007bff] hover:bg-gray-50"
           >
             How It Works
           </Link>
           <div className="pt-4 pb-3 border-t border-gray-200">
             <div className="flex items-center px-5">
               <Link to="/login" className="w-full">
-                <Button variant="outline" className="w-full text-vs-green-600 border-vs-green-600 hover:bg-vs-green-50">
+                <Button variant="outline" className="w-full text-[#007bff] border-[#007bff] hover:bg-blue-50">
                   Log In
                 </Button>
               </Link>

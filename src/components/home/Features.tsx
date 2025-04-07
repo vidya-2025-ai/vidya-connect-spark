@@ -14,43 +14,43 @@ const features = [
     name: 'For Students',
     description: 'Access curated internships and projects aligned with your skills and interests.',
     icon: GraduationCap,
-    iconBg: 'bg-vs-green-100',
-    iconColor: 'text-vs-green-600'
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-[#007bff]'
   },
   {
     name: 'For Organizations',
     description: 'Connect with talented students for your projects and initiatives.',
     icon: Building2,
-    iconBg: 'bg-vs-orange-100',
-    iconColor: 'text-vs-orange-500'
+    iconBg: 'bg-sky-100',
+    iconColor: 'text-[#00d4ff]'
   },
   {
     name: 'Mentorship',
     description: 'Receive guidance from industry professionals during your projects.',
     icon: Handshake,
-    iconBg: 'bg-vs-purple-100',
-    iconColor: 'text-vs-purple-500'
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-[#007bff]'
   },
   {
     name: 'Certifications',
     description: 'Earn verified certificates upon successful completion of projects.',
     icon: Award,
-    iconBg: 'bg-blue-100',
-    iconColor: 'text-blue-600'
+    iconBg: 'bg-sky-100',
+    iconColor: 'text-[#00d4ff]'
   },
   {
     name: 'Social Impact',
     description: 'Work on projects that make a real difference in communities.',
     icon: Globe,
-    iconBg: 'bg-teal-100',
-    iconColor: 'text-teal-600'
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-[#007bff]'
   },
   {
     name: 'Career Growth',
     description: 'Build your portfolio and enhance your resume with real-world experience.',
     icon: Briefcase,
-    iconBg: 'bg-amber-100',
-    iconColor: 'text-amber-600'
+    iconBg: 'bg-sky-100',
+    iconColor: 'text-[#00d4ff]'
   }
 ];
 
