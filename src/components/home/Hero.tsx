@@ -42,7 +42,7 @@ const Hero = () => {
         </div>
       </div>
       <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
-        <div className="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full bg-gradient-to-r from-vs-green-100 to-vs-purple-100 flex items-center justify-center">
+        <div className="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full bg-gradient-to-r from-[#007bff] to-[#00d4ff] flex items-center justify-center">
           <div className="max-w-md">
             <div className="grid grid-cols-2 gap-4">
               <div className="transform -rotate-6 vs-card p-4">
