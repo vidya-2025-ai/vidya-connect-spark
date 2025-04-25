@@ -1,9 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/auth/Login";
@@ -17,6 +17,8 @@ import Certificates from "./pages/student/Certificates";
 import Mentorship from "./pages/student/Mentorship";
 import CalendarPage from "./pages/student/Calendar";
 import Settings from "./pages/student/Settings";
+import RecruiterDashboard from "./pages/recruiter/Dashboard";
+import RecruiterJobs from "./pages/recruiter/Jobs";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +41,8 @@ const App = () => (
           <Route path="/student/mentorship" element={<Mentorship />} />
           <Route path="/student/calendar" element={<CalendarPage />} />
           <Route path="/student/settings" element={<Settings />} />
+          <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
+          <Route path="/recruiter/jobs" element={<RecruiterJobs />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
