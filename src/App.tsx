@@ -19,6 +19,10 @@ import CalendarPage from "./pages/student/Calendar";
 import Settings from "./pages/student/Settings";
 import RecruiterDashboard from "./pages/recruiter/Dashboard";
 import RecruiterJobs from "./pages/recruiter/Jobs";
+import RecruiterApplications from "./pages/recruiter/Applications";
+import RecruiterCandidates from "./pages/recruiter/Candidates";
+import RecruiterSchedule from "./pages/recruiter/Schedule";
+import RecruiterSettings from "./pages/recruiter/Settings";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +47,10 @@ const App = () => (
           <Route path="/student/settings" element={<Settings />} />
           <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
           <Route path="/recruiter/jobs" element={<RecruiterJobs />} />
+          <Route path="/recruiter/applications" element={<RecruiterApplications />} />
+          <Route path="/recruiter/candidates" element={<RecruiterCandidates />} />
+          <Route path="/recruiter/schedule" element={<RecruiterSchedule />} />
+          <Route path="/recruiter/settings" element={<RecruiterSettings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
