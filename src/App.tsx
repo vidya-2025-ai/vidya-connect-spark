@@ -10,6 +10,13 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import RegisterOrg from "./pages/auth/RegisterOrg";
 import StudentDashboard from "./pages/dashboard/StudentDashboard";
+import ExploreOpportunities from "./pages/student/ExploreOpportunities";
+import Applications from "./pages/student/Applications";
+import ActivityTracker from "./pages/student/ActivityTracker";
+import Certificates from "./pages/student/Certificates";
+import Mentorship from "./pages/student/Mentorship";
+import CalendarPage from "./pages/student/Calendar";
+import Settings from "./pages/student/Settings";
 
 const queryClient = new QueryClient();
 
@@ -25,7 +32,13 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/register-org" element={<RegisterOrg />} />
           <Route path="/student/dashboard" element={<StudentDashboard />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/student/explore" element={<ExploreOpportunities />} />
+          <Route path="/student/applications" element={<Applications />} />
+          <Route path="/student/tracker" element={<ActivityTracker />} />
+          <Route path="/student/certificates" element={<Certificates />} />
+          <Route path="/student/mentorship" element={<Mentorship />} />
+          <Route path="/student/calendar" element={<CalendarPage />} />
+          <Route path="/student/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
