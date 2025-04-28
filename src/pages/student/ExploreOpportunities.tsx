@@ -206,9 +206,9 @@ const ExploreOpportunities = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="any">Any duration</SelectItem>
-                          <SelectItem value="short">Short (< 1 month)</SelectItem>
+                          <SelectItem value="short">Short (&lt; 1 month)</SelectItem>
                           <SelectItem value="medium">Medium (1-3 months)</SelectItem>
-                          <SelectItem value="long">Long (> 3 months)</SelectItem>
+                          <SelectItem value="long">Long (&gt; 3 months)</SelectItem>
                         </SelectContent>
                       </Select>
                       
