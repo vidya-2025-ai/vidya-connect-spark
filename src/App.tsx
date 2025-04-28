@@ -1,7 +1,7 @@
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@radix-ui/react-tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
@@ -24,6 +24,14 @@ import RecruiterApplications from "./pages/recruiter/Applications";
 import RecruiterCandidates from "./pages/recruiter/Candidates";
 import RecruiterSchedule from "./pages/recruiter/Schedule";
 import RecruiterSettings from "./pages/recruiter/Settings";
+import SkillAssessment from "./pages/student/SkillAssessment";
+import MicroInternships from "./pages/student/MicroInternships";
+import CareerMap from "./pages/student/CareerMap";
+import CommunityHub from "./pages/student/CommunityHub";
+import InternshipChallenges from "./pages/student/InternshipChallenges";
+import GrievanceSystem from "./pages/student/GrievanceSystem";
+import UniversityDashboard from "./pages/university/Dashboard";
+import React from "react";
 
 const queryClient = new QueryClient();
 
@@ -46,12 +54,19 @@ const App = () => (
           <Route path="/student/mentorship" element={<Mentorship />} />
           <Route path="/student/calendar" element={<CalendarPage />} />
           <Route path="/student/settings" element={<Settings />} />
+          <Route path="/student/skill-assessment" element={<SkillAssessment />} />
+          <Route path="/student/micro-internships" element={<MicroInternships />} />
+          <Route path="/student/career-map" element={<CareerMap />} />
+          <Route path="/student/community" element={<CommunityHub />} />
+          <Route path="/student/challenges" element={<InternshipChallenges />} />
+          <Route path="/student/grievances" element={<GrievanceSystem />} />
           <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
           <Route path="/recruiter/jobs" element={<RecruiterJobs />} />
           <Route path="/recruiter/applications" element={<RecruiterApplications />} />
           <Route path="/recruiter/candidates" element={<RecruiterCandidates />} />
           <Route path="/recruiter/schedule" element={<RecruiterSchedule />} />
           <Route path="/recruiter/settings" element={<RecruiterSettings />} />
+          <Route path="/university/dashboard" element={<UniversityDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
