@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -31,6 +32,11 @@ import CommunityHub from "./pages/student/CommunityHub";
 import InternshipChallenges from "./pages/student/InternshipChallenges";
 import GrievanceSystem from "./pages/student/GrievanceSystem";
 import UniversityDashboard from "./pages/university/Dashboard";
+import RecruiterTalentSearch from "./pages/recruiter/TalentSearch";
+import RecruiterMentorship from "./pages/recruiter/Mentorship";
+import RecruiterChallenges from "./pages/recruiter/Challenges";
+import RecruiterGrievances from "./pages/recruiter/Grievances";
+import RecruiterCommunity from "./pages/recruiter/Community";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +72,11 @@ const App = () => (
               <Route path="/recruiter/applications" element={<RecruiterApplications />} />
               <Route path="/recruiter/candidates" element={<RecruiterCandidates />} />
               <Route path="/recruiter/schedule" element={<RecruiterSchedule />} />
+              <Route path="/recruiter/talent-search" element={<RecruiterTalentSearch />} />
+              <Route path="/recruiter/mentorship" element={<RecruiterMentorship />} />
+              <Route path="/recruiter/challenges" element={<RecruiterChallenges />} />
+              <Route path="/recruiter/grievances" element={<RecruiterGrievances />} />
+              <Route path="/recruiter/community" element={<RecruiterCommunity />} />
               <Route path="/recruiter/settings" element={<RecruiterSettings />} />
               <Route path="/university/dashboard" element={<UniversityDashboard />} />
               <Route path="*" element={<NotFound />} />
