@@ -1,9 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import React from "react";
 
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -31,47 +31,50 @@ import CommunityHub from "./pages/student/CommunityHub";
 import InternshipChallenges from "./pages/student/InternshipChallenges";
 import GrievanceSystem from "./pages/student/GrievanceSystem";
 import UniversityDashboard from "./pages/university/Dashboard";
-import React from "react";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/register-org" element={<RegisterOrg />} />
-          <Route path="/student/dashboard" element={<StudentDashboard />} />
-          <Route path="/student/explore" element={<ExploreOpportunities />} />
-          <Route path="/student/applications" element={<Applications />} />
-          <Route path="/student/tracker" element={<ActivityTracker />} />
-          <Route path="/student/certificates" element={<Certificates />} />
-          <Route path="/student/mentorship" element={<Mentorship />} />
-          <Route path="/student/calendar" element={<CalendarPage />} />
-          <Route path="/student/settings" element={<Settings />} />
-          <Route path="/student/skill-assessment" element={<SkillAssessment />} />
-          <Route path="/student/micro-internships" element={<MicroInternships />} />
-          <Route path="/student/career-map" element={<CareerMap />} />
-          <Route path="/student/community" element={<CommunityHub />} />
-          <Route path="/student/challenges" element={<InternshipChallenges />} />
-          <Route path="/student/grievances" element={<GrievanceSystem />} />
-          <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
-          <Route path="/recruiter/jobs" element={<RecruiterJobs />} />
-          <Route path="/recruiter/applications" element={<RecruiterApplications />} />
-          <Route path="/recruiter/candidates" element={<RecruiterCandidates />} />
-          <Route path="/recruiter/schedule" element={<RecruiterSchedule />} />
-          <Route path="/recruiter/settings" element={<RecruiterSettings />} />
-          <Route path="/university/dashboard" element={<UniversityDashboard />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <React.StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <div className="min-h-screen w-full">
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/register-org" element={<RegisterOrg />} />
+              <Route path="/student/dashboard" element={<StudentDashboard />} />
+              <Route path="/student/explore" element={<ExploreOpportunities />} />
+              <Route path="/student/applications" element={<Applications />} />
+              <Route path="/student/tracker" element={<ActivityTracker />} />
+              <Route path="/student/certificates" element={<Certificates />} />
+              <Route path="/student/mentorship" element={<Mentorship />} />
+              <Route path="/student/calendar" element={<CalendarPage />} />
+              <Route path="/student/settings" element={<Settings />} />
+              <Route path="/student/skill-assessment" element={<SkillAssessment />} />
+              <Route path="/student/micro-internships" element={<MicroInternships />} />
+              <Route path="/student/career-map" element={<CareerMap />} />
+              <Route path="/student/community" element={<CommunityHub />} />
+              <Route path="/student/challenges" element={<InternshipChallenges />} />
+              <Route path="/student/grievances" element={<GrievanceSystem />} />
+              <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
+              <Route path="/recruiter/jobs" element={<RecruiterJobs />} />
+              <Route path="/recruiter/applications" element={<RecruiterApplications />} />
+              <Route path="/recruiter/candidates" element={<RecruiterCandidates />} />
+              <Route path="/recruiter/schedule" element={<RecruiterSchedule />} />
+              <Route path="/recruiter/settings" element={<RecruiterSettings />} />
+              <Route path="/university/dashboard" element={<UniversityDashboard />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </div>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </React.StrictMode>
 );
 
 export default App;
