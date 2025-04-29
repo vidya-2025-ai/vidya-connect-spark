@@ -16,7 +16,9 @@ import {
   Award,
   MapPin,
   Heart,
-  ShieldCheck
+  ShieldCheck,
+  FileText as Resume,
+  Calculator
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/settings/ThemeToggle';
@@ -32,7 +34,9 @@ const StudentSidebar = () => {
     { label: 'Certificates', icon: Award, href: '/student/certificates' },
     { label: 'Mentorship', icon: Users, href: '/student/mentorship' },
     { label: 'Calendar', icon: Calendar, href: '/student/calendar' },
-    { label: 'Skill Assessment', icon: Star, href: '/student/skill-assessment' },
+    { label: 'Skills & Learning', icon: Star, href: '/student/skill-assessment' },
+    { label: 'Resume Builder', icon: Resume, href: '/student/resume-builder' },
+    { label: 'ATS Calculator', icon: Calculator, href: '/student/ats-calculator' },
     { label: 'Micro-Internships', icon: BookOpen, href: '/student/micro-internships' },
     { label: 'Career Map', icon: MapPin, href: '/student/career-map' },
     { label: 'Community Hub', icon: Heart, href: '/student/community' },
