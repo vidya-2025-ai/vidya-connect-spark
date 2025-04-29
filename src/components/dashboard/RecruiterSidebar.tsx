@@ -12,7 +12,9 @@ import {
   Star,
   MessageSquare,
   Heart,
-  ShieldCheck
+  ShieldCheck,
+  Award,
+  Sliders
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/settings/ThemeToggle';
@@ -26,7 +28,8 @@ const RecruiterSidebar = () => {
     { label: 'Applications', icon: FileText, href: '/recruiter/applications' },
     { label: 'Candidates', icon: Users, href: '/recruiter/candidates' },
     { label: 'Schedule', icon: Calendar, href: '/recruiter/schedule' },
-    { label: 'Talent Search', icon: Search, href: '/recruiter/talent-search' },
+    { label: 'Talent Search & ATS', icon: Search, href: '/recruiter/talent-search' },
+    { label: 'Assessment Stats', icon: Award, href: '/recruiter/assessment-stats' },
     { label: 'Mentorship Program', icon: Star, href: '/recruiter/mentorship' },
     { label: 'Corporate Challenges', icon: Heart, href: '/recruiter/challenges' },
     { label: 'Grievance Portal', icon: ShieldCheck, href: '/recruiter/grievances' },

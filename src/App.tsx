@@ -39,6 +39,7 @@ import RecruiterGrievances from "./pages/recruiter/Grievances";
 import RecruiterCommunity from "./pages/recruiter/Community";
 import ATSCalculator from "./pages/student/ATSCalculator";
 import ResumeBuilder from "./pages/student/ResumeBuilder";
+import AssessmentStats from "./pages/recruiter/AssessmentStats";
 
 const queryClient = new QueryClient();
 
@@ -82,6 +83,7 @@ const App = () => (
               <Route path="/recruiter/grievances" element={<RecruiterGrievances />} />
               <Route path="/recruiter/community" element={<RecruiterCommunity />} />
               <Route path="/recruiter/settings" element={<RecruiterSettings />} />
+              <Route path="/recruiter/assessment-stats" element={<AssessmentStats />} />
               <Route path="/university/dashboard" element={<UniversityDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -3,10 +3,12 @@ import React, { useState } from 'react';
 import RecruiterSidebar from '@/components/dashboard/RecruiterSidebar';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Bell, Star, BookOpen, GraduationCap } from 'lucide-react';
+import { Search, Filter, Bell, Star, BookOpen, GraduationCap, Settings, Sliders } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -18,6 +20,15 @@ import {
 const TalentSearch = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("search");
+  const [atsParameters, setAtsParameters] = useState({
+    requiredSkills: "",
+    preferredSkills: "",
+    experienceLevel: "any",
+    minEducation: "bachelor",
+    keywordWeight: "medium",
+    resumeFormat: "any"
+  });
   
   const searchResults = [
     {
@@ -27,6 +38,7 @@ const TalentSearch = () => {
       university: "MIT",
       skills: ["React", "Node.js", "TypeScript", "MongoDB"],
       skillScore: 92,
+      atsScore: 85,
       achievements: ["Top 10% in AI Challenge", "3 Industry Certifications"]
     },
     {
@@ -36,6 +48,7 @@ const TalentSearch = () => {
       university: "Stanford",
       skills: ["Product Strategy", "Agile", "User Research", "Data Analysis"],
       skillScore: 88,
+      atsScore: 78,
       achievements: ["Led 5+ Product Launches", "Product Management Certification"]
     },
     {
@@ -45,6 +58,7 @@ const TalentSearch = () => {
       university: "RISD",
       skills: ["Figma", "Adobe XD", "User Testing", "Wireframing"],
       skillScore: 85,
+      atsScore: 72,
       achievements: ["Design Excellence Award", "UX Research Certificate"]
     },
     {
@@ -54,9 +68,23 @@ const TalentSearch = () => {
       university: "UC Berkeley",
       skills: ["Python", "ML/AI", "TensorFlow", "SQL"],
       skillScore: 96,
+      atsScore: 91,
       achievements: ["ML Competition Winner", "Published Research Paper"]
     }
   ];
+
+  const handleAtsParameterChange = (param, value) => {
+    setAtsParameters(prev => ({
+      ...prev,
+      [param]: value
+    }));
+  };
+
+  const applyATSParameters = () => {
+    // In a real app, this would filter candidates based on ATS parameters
+    console.log("Applying ATS parameters:", atsParameters);
+    setActiveTab("search");
+  };
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
@@ -103,9 +131,9 @@ const TalentSearch = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Talent Search</h1>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Talent Search & ATS</h1>
                   <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                    Find talented candidates based on skills and qualifications
+                    Find talented candidates based on skills, qualifications, and your ATS criteria
                   </p>
                 </div>
                 <div className="flex gap-4">
@@ -113,103 +141,256 @@ const TalentSearch = () => {
                     <Filter className="h-4 w-4" />
                     {filterOpen ? 'Hide Filters' : 'Show Filters'}
                   </Button>
+                  <Button 
+                    variant={activeTab === "ats" ? "default" : "outline"}
+                    className="flex items-center gap-2" 
+                    onClick={() => setActiveTab(activeTab === "ats" ? "search" : "ats")}
+                  >
+                    <Sliders className="h-4 w-4" />
+                    ATS Parameters
+                  </Button>
+                  <Button variant="outline" className="flex items-center gap-2" onClick={() => window.location.href = "/recruiter/assessment-stats"}>
+                    <GraduationCap className="h-4 w-4" />
+                    Assessment Stats
+                  </Button>
                 </div>
               </div>
 
-              {filterOpen && (
-                <Card className="mb-6 border border-gray-200 dark:border-gray-700 shadow-sm">
-                  <CardContent className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div>
-                        <h3 className="mb-2 font-medium text-gray-900 dark:text-white">Skill-Based Search</h3>
-                        <div className="relative">
-                          <Input 
-                            placeholder="Enter skills (e.g., React, Python, UI Design)"
-                            className="pl-10"
-                          />
-                          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        </div>
-                      </div>
-                      <div>
-                        <h3 className="mb-2 font-medium text-gray-900 dark:text-white">Education Filter</h3>
-                        <div className="relative">
-                          <Input 
-                            placeholder="University, degree, or field of study"
-                            className="pl-10"
-                          />
-                          <GraduationCap className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        </div>
-                      </div>
-                      <div>
-                        <h3 className="mb-2 font-medium text-gray-900 dark:text-white">Experience Level</h3>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select experience level" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="entry">Entry Level</SelectItem>
-                            <SelectItem value="mid">Mid Level</SelectItem>
-                            <SelectItem value="senior">Senior Level</SelectItem>
-                            <SelectItem value="any">Any Level</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="mt-4 flex justify-end">
-                      <Button>Search Talent</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                {searchResults.map((candidate) => (
-                  <Card key={candidate.id} className="border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-start space-x-4">
-                          <Avatar className="h-12 w-12">
-                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">{candidate.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                          </Avatar>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="search">Candidate Search</TabsTrigger>
+                  <TabsTrigger value="ats">ATS Configuration</TabsTrigger>
+                </TabsList>
+                <TabsContent value="search">
+                  {filterOpen && (
+                    <Card className="mb-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                      <CardContent className="p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           <div>
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{candidate.name}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{candidate.role}</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{candidate.university}</p>
+                            <h3 className="mb-2 font-medium text-gray-900 dark:text-white">Skill-Based Search</h3>
+                            <div className="relative">
+                              <Input 
+                                placeholder="Enter skills (e.g., React, Python, UI Design)"
+                                className="pl-10"
+                              />
+                              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            </div>
+                          </div>
+                          <div>
+                            <h3 className="mb-2 font-medium text-gray-900 dark:text-white">Education Filter</h3>
+                            <div className="relative">
+                              <Input 
+                                placeholder="University, degree, or field of study"
+                                className="pl-10"
+                              />
+                              <GraduationCap className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            </div>
+                          </div>
+                          <div>
+                            <h3 className="mb-2 font-medium text-gray-900 dark:text-white">Experience Level</h3>
+                            <Select>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select experience level" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="entry">Entry Level</SelectItem>
+                                <SelectItem value="mid">Mid Level</SelectItem>
+                                <SelectItem value="senior">Senior Level</SelectItem>
+                                <SelectItem value="any">Any Level</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
-                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 flex items-center">
-                          <Star className="h-3 w-3 mr-1" fill="currentColor" />
-                          {candidate.skillScore}% Match
-                        </Badge>
-                      </div>
-                      <div className="mt-4 space-y-3">
-                        <div>
-                          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Skills</p>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {candidate.skills.map((skill, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {skill}
+                        <div className="mt-4 flex justify-end">
+                          <Button>Search Talent</Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                    {searchResults.map((candidate) => (
+                      <Card key={candidate.id} className="border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                        <CardContent className="p-6">
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-start space-x-4">
+                              <Avatar className="h-12 w-12">
+                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">{candidate.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{candidate.name}</h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">{candidate.role}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">{candidate.university}</p>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 flex items-center">
+                                <Star className="h-3 w-3 mr-1" fill="currentColor" />
+                                {candidate.skillScore}% Match
                               </Badge>
-                            ))}
+                              <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 flex items-center">
+                                <Settings className="h-3 w-3 mr-1" />
+                                {candidate.atsScore}% ATS Score
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="mt-4 space-y-3">
+                            <div>
+                              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Skills</p>
+                              <div className="flex flex-wrap gap-2 mt-1">
+                                {candidate.skills.map((skill, index) => (
+                                  <Badge key={index} variant="outline" className="text-xs">
+                                    {skill}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Achievements</p>
+                              <ul className="text-sm text-gray-600 dark:text-gray-400 mt-1 list-disc list-inside">
+                                {candidate.achievements.map((achievement, index) => (
+                                  <li key={index}>{achievement}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                          <div className="mt-4 flex justify-end gap-2">
+                            <Button variant="outline" size="sm">View Profile</Button>
+                            <Button size="sm">Contact</Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="ats">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Configure ATS Parameters</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                          <div>
+                            <label htmlFor="requiredSkills" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Required Skills (one per line)
+                            </label>
+                            <Textarea 
+                              id="requiredSkills"
+                              placeholder="Enter required skills, one per line"
+                              className="min-h-[120px]"
+                              value={atsParameters.requiredSkills}
+                              onChange={(e) => handleAtsParameterChange("requiredSkills", e.target.value)}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">These skills are mandatory for candidates</p>
+                          </div>
+                          
+                          <div>
+                            <label htmlFor="preferredSkills" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Preferred Skills (one per line)
+                            </label>
+                            <Textarea 
+                              id="preferredSkills"
+                              placeholder="Enter preferred skills, one per line"
+                              className="min-h-[120px]"
+                              value={atsParameters.preferredSkills}
+                              onChange={(e) => handleAtsParameterChange("preferredSkills", e.target.value)}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">These skills will boost candidate rankings</p>
                           </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Achievements</p>
-                          <ul className="text-sm text-gray-600 dark:text-gray-400 mt-1 list-disc list-inside">
-                            {candidate.achievements.map((achievement, index) => (
-                              <li key={index}>{achievement}</li>
-                            ))}
-                          </ul>
+                        
+                        <div className="space-y-4">
+                          <div>
+                            <label htmlFor="experienceLevel" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Experience Level
+                            </label>
+                            <Select 
+                              value={atsParameters.experienceLevel}
+                              onValueChange={(value) => handleAtsParameterChange("experienceLevel", value)}
+                            >
+                              <SelectTrigger id="experienceLevel">
+                                <SelectValue placeholder="Select experience level" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="entry">Entry Level (0-2 years)</SelectItem>
+                                <SelectItem value="mid">Mid Level (3-5 years)</SelectItem>
+                                <SelectItem value="senior">Senior Level (6+ years)</SelectItem>
+                                <SelectItem value="any">Any Experience Level</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div>
+                            <label htmlFor="minEducation" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Minimum Education
+                            </label>
+                            <Select 
+                              value={atsParameters.minEducation}
+                              onValueChange={(value) => handleAtsParameterChange("minEducation", value)}
+                            >
+                              <SelectTrigger id="minEducation">
+                                <SelectValue placeholder="Select minimum education" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="highschool">High School</SelectItem>
+                                <SelectItem value="associate">Associate Degree</SelectItem>
+                                <SelectItem value="bachelor">Bachelor's Degree</SelectItem>
+                                <SelectItem value="master">Master's Degree</SelectItem>
+                                <SelectItem value="phd">PhD</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div>
+                            <label htmlFor="keywordWeight" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Keyword Matching Weight
+                            </label>
+                            <Select 
+                              value={atsParameters.keywordWeight}
+                              onValueChange={(value) => handleAtsParameterChange("keywordWeight", value)}
+                            >
+                              <SelectTrigger id="keywordWeight">
+                                <SelectValue placeholder="Select keyword weight" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="low">Low - More candidates, less focused</SelectItem>
+                                <SelectItem value="medium">Medium - Balanced approach</SelectItem>
+                                <SelectItem value="high">High - Fewer candidates, highly focused</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div>
+                            <label htmlFor="resumeFormat" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Resume Format Preference
+                            </label>
+                            <Select 
+                              value={atsParameters.resumeFormat}
+                              onValueChange={(value) => handleAtsParameterChange("resumeFormat", value)}
+                            >
+                              <SelectTrigger id="resumeFormat">
+                                <SelectValue placeholder="Select resume format" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="any">Any Format</SelectItem>
+                                <SelectItem value="chronological">Chronological</SelectItem>
+                                <SelectItem value="functional">Functional</SelectItem>
+                                <SelectItem value="combination">Combination</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                       </div>
-                      <div className="mt-4 flex justify-end gap-2">
-                        <Button variant="outline" size="sm">View Profile</Button>
-                        <Button size="sm">Contact</Button>
+                      <div className="flex justify-end mt-6">
+                        <Button variant="outline" className="mr-2">Reset to Default</Button>
+                        <Button onClick={applyATSParameters}>Apply ATS Parameters</Button>
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
         </div>
