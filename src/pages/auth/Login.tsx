@@ -7,19 +7,21 @@ import { AuthTabs } from '@/components/auth/AuthForm';
 
 const Login = () => {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
       <Navbar />
-      <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
               Welcome Back
             </h2>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
               Log in to your Vidya-Samveda account to continue your journey
             </p>
           </div>
-          <AuthTabs isLogin={true} />
+          <div className="bg-white dark:bg-gray-800 shadow-xl rounded-xl p-8 mt-8 border border-gray-100 dark:border-gray-700">
+            <AuthTabs isLogin={true} />
+          </div>
         </div>
       </div>
       <Footer />

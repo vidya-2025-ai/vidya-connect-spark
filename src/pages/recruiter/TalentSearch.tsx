@@ -3,13 +3,21 @@ import React, { useState } from 'react';
 import RecruiterSidebar from '@/components/dashboard/RecruiterSidebar';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter, Bell, Star, BookOpen, GraduationCap } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const TalentSearch = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
   
   const searchResults = [
     {
@@ -55,13 +63,13 @@ const TalentSearch = () => {
       <RecruiterSidebar />
       <div className="flex flex-col w-0 flex-1 overflow-hidden">
         {/* Top bar */}
-        <div className="relative z-10 flex-shrink-0 flex h-16 bg-white shadow dark:bg-gray-800 dark:border-gray-700">
+        <div className="relative z-10 flex-shrink-0 flex h-16 bg-white shadow-sm dark:bg-gray-800 dark:border-gray-700 border-b border-gray-200">
           <div className="flex-1 px-4 flex justify-between">
             <div className="flex-1 flex">
               <div className="w-full flex md:ml-0">
                 <div className="relative w-full text-gray-400 focus-within:text-gray-600">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3">
-                    <Search className="h-5 w-5" aria-hidden="true" />
+                    <Search className="h-4 w-4" aria-hidden="true" />
                   </div>
                   <Input
                     className="block w-full h-full pl-10 pr-3 py-2 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
@@ -73,18 +81,15 @@ const TalentSearch = () => {
                 </div>
               </div>
             </div>
-            <div className="ml-4 flex items-center md:ml-6">
-              <button
-                type="button"
-                className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:hover:text-gray-300"
-              >
+            <div className="ml-4 flex items-center md:ml-6 space-x-3">
+              <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-500">
                 <span className="sr-only">View notifications</span>
-                <Bell className="h-6 w-6" aria-hidden="true" />
-              </button>
+                <Bell className="h-5 w-5" aria-hidden="true" />
+              </Button>
 
-              <div className="ml-3 relative">
+              <div className="relative">
                 <div className="flex items-center">
-                  <Avatar>
+                  <Avatar className="h-8 w-8">
                     <AvatarFallback>SR</AvatarFallback>
                   </Avatar>
                 </div>
@@ -98,67 +103,73 @@ const TalentSearch = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Talent Search</h1>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Talent Search</h1>
                   <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                     Find talented candidates based on skills and qualifications
                   </p>
                 </div>
                 <div className="flex gap-4">
-                  <Button variant="outline" className="flex items-center gap-2">
+                  <Button variant="outline" className="flex items-center gap-2" onClick={() => setFilterOpen(!filterOpen)}>
                     <Filter className="h-4 w-4" />
-                    Filters
+                    {filterOpen ? 'Hide Filters' : 'Show Filters'}
                   </Button>
                 </div>
               </div>
 
-              <Card className="mb-6">
-                <CardContent className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                      <h3 className="mb-2 font-medium text-gray-900 dark:text-white">Skill-Based Search</h3>
-                      <div className="relative">
-                        <Input 
-                          placeholder="Enter skills (e.g., React, Python, UI Design)"
-                          className="pl-10"
-                        />
-                        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              {filterOpen && (
+                <Card className="mb-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <h3 className="mb-2 font-medium text-gray-900 dark:text-white">Skill-Based Search</h3>
+                        <div className="relative">
+                          <Input 
+                            placeholder="Enter skills (e.g., React, Python, UI Design)"
+                            className="pl-10"
+                          />
+                          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="mb-2 font-medium text-gray-900 dark:text-white">Education Filter</h3>
+                        <div className="relative">
+                          <Input 
+                            placeholder="University, degree, or field of study"
+                            className="pl-10"
+                          />
+                          <GraduationCap className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="mb-2 font-medium text-gray-900 dark:text-white">Experience Level</h3>
+                        <Select>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select experience level" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="entry">Entry Level</SelectItem>
+                            <SelectItem value="mid">Mid Level</SelectItem>
+                            <SelectItem value="senior">Senior Level</SelectItem>
+                            <SelectItem value="any">Any Level</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
-                    <div>
-                      <h3 className="mb-2 font-medium text-gray-900 dark:text-white">Education Filter</h3>
-                      <div className="relative">
-                        <Input 
-                          placeholder="University, degree, or field of study"
-                          className="pl-10"
-                        />
-                        <GraduationCap className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      </div>
+                    <div className="mt-4 flex justify-end">
+                      <Button>Search Talent</Button>
                     </div>
-                    <div>
-                      <h3 className="mb-2 font-medium text-gray-900 dark:text-white">Certification Filter</h3>
-                      <div className="relative">
-                        <Input 
-                          placeholder="Enter certification name"
-                          className="pl-10"
-                        />
-                        <BookOpen className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex justify-end">
-                    <Button>Search Talent</Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                 {searchResults.map((candidate) => (
-                  <Card key={candidate.id} className="hover:shadow-lg transition-shadow">
+                  <Card key={candidate.id} className="border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
                     <CardContent className="p-6">
                       <div className="flex justify-between items-start">
-                        <div className="flex items-start space-x-3">
+                        <div className="flex items-start space-x-4">
                           <Avatar className="h-12 w-12">
-                            <AvatarFallback>{candidate.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">{candidate.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                           </Avatar>
                           <div>
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{candidate.name}</h3>
