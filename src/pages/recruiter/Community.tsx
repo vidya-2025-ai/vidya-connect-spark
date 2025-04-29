@@ -5,7 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Bell, Search, MessageSquare, Heart, Plus } from 'lucide-react';
+import { 
+  Bell, 
+  Search, 
+  MessageSquare, 
+  Heart, 
+  Plus, 
+  Calendar, 
+  Clock, 
+  Users, 
+  Upload 
+} from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
