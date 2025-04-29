@@ -4,7 +4,7 @@ import RecruiterSidebar from '@/components/dashboard/RecruiterSidebar';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bell, Search, Briefcase, Users, Calendar, Star } from 'lucide-react';
+import { Bell, Search, Briefcase, Users, Calendar, Star, FileText } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
