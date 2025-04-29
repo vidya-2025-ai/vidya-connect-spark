@@ -13,8 +13,7 @@ import Register from "./pages/auth/Register";
 import RegisterOrg from "./pages/auth/RegisterOrg";
 import StudentDashboard from "./pages/dashboard/StudentDashboard";
 import ExploreOpportunities from "./pages/student/ExploreOpportunities";
-import Applications from "./pages/student/Applications";
-import ActivityTracker from "./pages/student/ActivityTracker";
+import ApplicationsTracker from "./pages/student/ApplicationsTracker";
 import Certificates from "./pages/student/Certificates";
 import Mentorship from "./pages/student/Mentorship";
 import CalendarPage from "./pages/student/Calendar";
@@ -25,9 +24,8 @@ import RecruiterApplications from "./pages/recruiter/Applications";
 import RecruiterCandidates from "./pages/recruiter/Candidates";
 import RecruiterSchedule from "./pages/recruiter/Schedule";
 import RecruiterSettings from "./pages/recruiter/Settings";
-import SkillAssessment from "./pages/student/SkillAssessment";
+import CareerSkills from "./pages/student/CareerSkills";
 import MicroInternships from "./pages/student/MicroInternships";
-import CareerMap from "./pages/student/CareerMap";
 import CommunityHub from "./pages/student/CommunityHub";
 import InternshipChallenges from "./pages/student/InternshipChallenges";
 import GrievanceSystem from "./pages/student/GrievanceSystem";
@@ -58,15 +56,13 @@ const App = () => (
               <Route path="/register-org" element={<RegisterOrg />} />
               <Route path="/student/dashboard" element={<StudentDashboard />} />
               <Route path="/student/explore" element={<ExploreOpportunities />} />
-              <Route path="/student/applications" element={<Applications />} />
-              <Route path="/student/tracker" element={<ActivityTracker />} />
+              <Route path="/student/applications" element={<ApplicationsTracker />} />
               <Route path="/student/certificates" element={<Certificates />} />
               <Route path="/student/mentorship" element={<Mentorship />} />
               <Route path="/student/calendar" element={<CalendarPage />} />
               <Route path="/student/settings" element={<Settings />} />
-              <Route path="/student/skill-assessment" element={<SkillAssessment />} />
+              <Route path="/student/career-skills" element={<CareerSkills />} />
               <Route path="/student/micro-internships" element={<MicroInternships />} />
-              <Route path="/student/career-map" element={<CareerMap />} />
               <Route path="/student/community" element={<CommunityHub />} />
               <Route path="/student/challenges" element={<InternshipChallenges />} />
               <Route path="/student/grievances" element={<GrievanceSystem />} />
