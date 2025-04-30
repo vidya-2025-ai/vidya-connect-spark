@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface AuthFormProps {
-  type: 'student' | 'organization' | 'university';
+  type: 'student' | 'organization';
   isLogin?: boolean;
 }
 
@@ -29,9 +29,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [organization, setOrganization] = useState('');
-  const [university, setUniversity] = useState('');
   const [jobTitle, setJobTitle] = useState('');
-  const [department, setDepartment] = useState('');
   const [loading, setLoading] = useState(false);
   const { login, register } = useAuth();
   const { toast } = useToast();
@@ -46,18 +44,16 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
         await login(email, password);
       } else {
         // Register user
-        const userRole = type === 'student' ? 'student' : type === 'organization' ? 'recruiter' : 'university';
+        const userRole = type === 'student' ? 'student' : 'recruiter';
         
         const userData = {
           firstName,
           lastName,
           email,
           password,
-          role: userRole as 'student' | 'recruiter' | 'university',
+          role: userRole as 'student' | 'recruiter',
           organization: type === 'organization' ? organization : undefined,
-          university: type === 'university' ? university : undefined,
-          jobTitle: (type === 'organization' || type === 'university') ? jobTitle : undefined,
-          department: type === 'university' ? department : undefined
+          jobTitle: type === 'organization' ? jobTitle : undefined
         };
         
         await register(userData);
@@ -74,20 +70,17 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
   const getCardTitle = () => {
     if (isLogin) return 'Log In';
     if (type === 'student') return 'Create an Account as Student';
-    if (type === 'organization') return 'Create an Account as Recruiter';
-    return 'Create an Account as University';
+    return 'Create an Account as Recruiter';
   };
 
   const getCardDescription = () => {
     if (isLogin) return 'Enter your credentials to access your account';
     if (type === 'student') return 'Join InternMatch and start your learning journey';
-    if (type === 'organization') return 'Join InternMatch and connect with talented students';
-    return 'Join InternMatch and manage your university programs';
+    return 'Join InternMatch and connect with talented students';
   };
 
   function getRegistrationLink() {
     if (type === 'organization') return '/register-org';
-    if (type === 'university') return '/register-university';
     return '/register';
   }
 
@@ -130,64 +123,20 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
               </div>
               
               {type === 'organization' && (
-                <div className="space-y-2">
-                  <Label htmlFor="organization">Company/Organization Name</Label>
-                  <Input 
-                    id="organization" 
-                    type="text" 
-                    value={organization}
-                    onChange={(e) => setOrganization(e.target.value)}
-                    placeholder="Company Name" 
-                    required 
-                    className="vs-input-focus"
-                  />
-                </div>
-              )}
-              
-              {type === 'organization' && (
-                <div className="space-y-2">
-                  <Label htmlFor="jobTitle">Job Title</Label>
-                  <Input 
-                    id="jobTitle" 
-                    type="text" 
-                    value={jobTitle}
-                    onChange={(e) => setJobTitle(e.target.value)}
-                    placeholder="HR Manager" 
-                    required 
-                    className="vs-input-focus"
-                  />
-                </div>
-              )}
-              
-              {type === 'university' && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="university">University Name</Label>
+                    <Label htmlFor="organization">Company/Organization Name</Label>
                     <Input 
-                      id="university" 
+                      id="organization" 
                       type="text" 
-                      value={university}
-                      onChange={(e) => setUniversity(e.target.value)}
-                      placeholder="University Name" 
+                      value={organization}
+                      onChange={(e) => setOrganization(e.target.value)}
+                      placeholder="Company Name" 
                       required 
                       className="vs-input-focus"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <Select onValueChange={setDepartment} value={department}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="career-services">Career Services</SelectItem>
-                        <SelectItem value="placement-cell">Placement Cell</SelectItem>
-                        <SelectItem value="student-affairs">Student Affairs</SelectItem>
-                        <SelectItem value="administration">Administration</SelectItem>
-                        <SelectItem value="academics">Academics</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  
                   <div className="space-y-2">
                     <Label htmlFor="jobTitle">Job Title</Label>
                     <Input 
@@ -195,7 +144,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
                       type="text" 
                       value={jobTitle}
                       onChange={(e) => setJobTitle(e.target.value)}
-                      placeholder="Placement Officer" 
+                      placeholder="HR Manager" 
                       required 
                       className="vs-input-focus"
                     />
@@ -243,9 +192,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
             className={`w-full ${
               type === 'student' 
                 ? 'bg-blue-600 hover:bg-blue-700' 
-                : type === 'organization' 
-                ? 'bg-purple-600 hover:bg-purple-700'
-                : 'bg-green-600 hover:bg-green-700'
+                : 'bg-purple-600 hover:bg-purple-700'
             } text-white`}
             disabled={loading}
           >
@@ -274,19 +221,15 @@ const AuthTabs: React.FC<{ isLogin?: boolean }> = ({ isLogin = false }) => {
   
   return (
     <Tabs defaultValue="student" className="w-full max-w-md mx-auto" onValueChange={setActiveTab}>
-      <TabsList className="grid w-full grid-cols-3">
+      <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="student">Student</TabsTrigger>
         <TabsTrigger value="organization">Organization</TabsTrigger>
-        <TabsTrigger value="university">University</TabsTrigger>
       </TabsList>
       <TabsContent value="student" className="mt-6">
         <AuthForm type="student" isLogin={isLogin} />
       </TabsContent>
       <TabsContent value="organization" className="mt-6">
         <AuthForm type="organization" isLogin={isLogin} />
-      </TabsContent>
-      <TabsContent value="university" className="mt-6">
-        <AuthForm type="university" isLogin={isLogin} />
       </TabsContent>
     </Tabs>
   );

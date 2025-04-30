@@ -22,7 +22,7 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['student', 'recruiter', 'university'],
+    enum: ['student', 'recruiter'],
     required: true
   },
   organization: {
@@ -31,22 +31,10 @@ const UserSchema = new mongoose.Schema({
       return this.role === 'recruiter';
     }
   },
-  university: {
-    type: String,
-    required: function() {
-      return this.role === 'university';
-    }
-  },
-  department: {
-    type: String,
-    required: function() {
-      return this.role === 'university';
-    }
-  },
   jobTitle: {
     type: String,
     required: function() {
-      return this.role === 'recruiter' || this.role === 'university';
+      return this.role === 'recruiter';
     }
   },
   skills: [{

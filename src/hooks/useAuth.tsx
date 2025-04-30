@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
 import { useToast } from '../hooks/use-toast';
 
-export type UserRole = 'student' | 'recruiter' | 'university';
+export type UserRole = 'student' | 'recruiter';
 
 interface User {
   id: string;
@@ -13,8 +13,6 @@ interface User {
   email: string;
   role: UserRole;
   organization?: string;
-  university?: string;
-  department?: string;
   jobTitle?: string;
   skills?: string[];
   bio?: string;
@@ -33,9 +31,7 @@ export interface RegisterData {
   password: string;
   role: UserRole;
   organization?: string;
-  university?: string;
   jobTitle?: string;
-  department?: string;
 }
 
 // Define the type for our context
@@ -161,8 +157,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       navigate('/student/dashboard');
     } else if (role === 'recruiter') {
       navigate('/recruiter/dashboard');
-    } else if (role === 'university') {
-      navigate('/university/dashboard');
     }
   };
 

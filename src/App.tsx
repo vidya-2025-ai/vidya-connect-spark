@@ -12,7 +12,6 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import RegisterOrg from "./pages/auth/RegisterOrg";
-import RegisterUniversity from "./pages/auth/RegisterUniversity";
 import StudentDashboard from "./pages/dashboard/StudentDashboard";
 import ExploreOpportunities from "./pages/student/ExploreOpportunities";
 import ApplicationsTracker from "./pages/student/ApplicationsTracker";
@@ -31,7 +30,6 @@ import MicroInternships from "./pages/student/MicroInternships";
 import CommunityHub from "./pages/student/CommunityHub";
 import InternshipChallenges from "./pages/student/InternshipChallenges";
 import GrievanceSystem from "./pages/student/GrievanceSystem";
-import UniversityDashboard from "./pages/university/Dashboard";
 import RecruiterTalentSearch from "./pages/recruiter/TalentSearch";
 import RecruiterMentorship from "./pages/recruiter/Mentorship";
 import RecruiterChallenges from "./pages/recruiter/Challenges";
@@ -58,7 +56,6 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/register-org" element={<RegisterOrg />} />
-                <Route path="/register-university" element={<RegisterUniversity />} />
                 <Route path="/student/dashboard" element={<StudentDashboard />} />
                 <Route path="/student/explore" element={<ExploreOpportunities />} />
                 <Route path="/student/applications" element={<ApplicationsTracker />} />
@@ -85,7 +82,6 @@ function App() {
                 <Route path="/recruiter/community" element={<RecruiterCommunity />} />
                 <Route path="/recruiter/settings" element={<RecruiterSettings />} />
                 <Route path="/recruiter/assessment-stats" element={<AssessmentStats />} />
-                <Route path="/university/dashboard" element={<UniversityDashboard />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </AuthProvider>

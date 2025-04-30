@@ -1,14 +1,25 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import RecruiterSidebar from '@/components/dashboard/RecruiterSidebar';
+import MobileMenuToggle from '@/components/layout/MobileMenuToggle';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bell, Search, Briefcase, Users, Calendar, Star, FileText } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
   const stats = [
     { title: 'Active Jobs', value: '12', change: '+2', status: 'increase', icon: Briefcase, color: 'bg-blue-500' },
     { title: 'Total Applications', value: '148', change: '+15', status: 'increase', icon: FileText, color: 'bg-purple-500' },
@@ -66,7 +77,14 @@ const Dashboard = () => {
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
-      <RecruiterSidebar />
+      <RecruiterSidebar 
+        isMobileMenuOpen={isMobileMenuOpen} 
+        setIsMobileMenuOpen={setIsMobileMenuOpen} 
+      />
+      
+      {!isMobileMenuOpen && (
+        <MobileMenuToggle onClick={toggleMobileMenu} />
+      )}
       
       <div className="flex flex-col w-0 flex-1 overflow-hidden">
         {/* Top bar */}
@@ -95,7 +113,11 @@ const Dashboard = () => {
               <div className="relative">
                 <div className="flex items-center space-x-3">
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback>SR</AvatarFallback>
+                    <AvatarFallback>
+                      {user?.firstName && user?.lastName 
+                        ? `${user.firstName[0]}${user.lastName[0]}` 
+                        : 'U'}
+                    </AvatarFallback>
                   </Avatar>
                 </div>
               </div>
@@ -109,7 +131,7 @@ const Dashboard = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Welcome back! Here's an overview of your recruitment activities.
+                Welcome back{user?.firstName ? `, ${user.firstName}!` : "!"} Here's an overview of your recruitment activities.
               </p>
             </div>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">

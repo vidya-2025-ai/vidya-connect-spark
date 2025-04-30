@@ -14,8 +14,6 @@ router.post('/register', async (req, res) => {
       password, 
       role, 
       organization,
-      university,
-      department,
       jobTitle 
     } = req.body;
     
@@ -37,10 +35,6 @@ router.post('/register', async (req, res) => {
     // Add role-specific fields
     if (role === 'recruiter' && organization) {
       userData.organization = organization;
-      if (jobTitle) userData.jobTitle = jobTitle;
-    } else if (role === 'university') {
-      userData.university = university;
-      userData.department = department;
       if (jobTitle) userData.jobTitle = jobTitle;
     }
     
@@ -68,10 +62,6 @@ router.post('/register', async (req, res) => {
     // Add role-specific fields to response
     if (user.role === 'recruiter') {
       responseUser.organization = user.organization;
-      responseUser.jobTitle = user.jobTitle;
-    } else if (user.role === 'university') {
-      responseUser.university = user.university;
-      responseUser.department = user.department;
       responseUser.jobTitle = user.jobTitle;
     }
     
@@ -122,10 +112,6 @@ router.post('/login', async (req, res) => {
     if (user.role === 'recruiter') {
       responseUser.organization = user.organization;
       responseUser.jobTitle = user.jobTitle;
-    } else if (user.role === 'university') {
-      responseUser.university = user.university;
-      responseUser.department = user.department;
-      responseUser.jobTitle = user.jobTitle;
     }
     
     res.json({
@@ -134,6 +120,18 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Logout user (clears token on the client side, but we can add it for tracking purposes)
+router.post('/logout', async (req, res) => {
+  try {
+    // In a more advanced implementation, we could add token to a blacklist
+    // or track user logout activity
+    res.json({ message: 'Logout successful' });
+  } catch (error) {
+    console.error('Logout error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
