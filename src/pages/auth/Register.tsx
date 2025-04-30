@@ -21,6 +21,7 @@ const Register = () => {
           </div>
           <div className="bg-white dark:bg-gray-800 shadow-xl rounded-xl p-8 mt-8 border border-gray-100 dark:border-gray-700">
             <AuthForm type="student" />
+            <AuthForm type="organization" />
           </div>
         </div>
       </div>
