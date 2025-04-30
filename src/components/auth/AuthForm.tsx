@@ -84,6 +84,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
     return 'Join InternMatch and manage your university programs';
   };
 
+  function getRegistrationLink() {
+    if (type === 'organization') return '/register-org';
+    if (type === 'university') return '/register-university';
+    return '/register';
+  }
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
@@ -260,26 +266,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
       </CardFooter>
     </Card>
   );
-
-  function getRegistrationLink() {
-    if (type === 'organization') return '/register-org';
-    if (type === 'university') return '/register-university';
-    return '/register';
-  }
-
-  function getCardTitle() {
-    if (isLogin) return 'Log In';
-    if (type === 'student') return 'Create an Account as Student';
-    if (type === 'organization') return 'Create an Account as Recruiter';
-    return 'Create an Account as University';
-  }
-
-  function getCardDescription() {
-    if (isLogin) return 'Enter your credentials to access your account';
-    if (type === 'student') return 'Join InternMatch and start your learning journey';
-    if (type === 'organization') return 'Join InternMatch and connect with talented students';
-    return 'Join InternMatch and manage your university programs';
-  }
 };
 
 const AuthTabs: React.FC<{ isLogin?: boolean }> = ({ isLogin = false }) => {
