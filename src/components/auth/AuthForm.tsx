@@ -46,12 +46,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
         await login(email, password);
       } else {
         // Register user
+        const userRole = type === 'student' ? 'student' : type === 'organization' ? 'recruiter' : 'university';
+        
         const userData = {
           firstName,
           lastName,
           email,
           password,
-          role: type === 'student' ? 'student' : type === 'organization' ? 'recruiter' : 'university',
+          role: userRole as 'student' | 'recruiter' | 'university',
           organization: type === 'organization' ? organization : undefined,
           university: type === 'university' ? university : undefined,
           jobTitle: (type === 'organization' || type === 'university') ? jobTitle : undefined,
@@ -263,6 +265,20 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
     if (type === 'organization') return '/register-org';
     if (type === 'university') return '/register-university';
     return '/register';
+  }
+
+  function getCardTitle() {
+    if (isLogin) return 'Log In';
+    if (type === 'student') return 'Create an Account as Student';
+    if (type === 'organization') return 'Create an Account as Recruiter';
+    return 'Create an Account as University';
+  }
+
+  function getCardDescription() {
+    if (isLogin) return 'Enter your credentials to access your account';
+    if (type === 'student') return 'Join InternMatch and start your learning journey';
+    if (type === 'organization') return 'Join InternMatch and connect with talented students';
+    return 'Join InternMatch and manage your university programs';
   }
 };
 

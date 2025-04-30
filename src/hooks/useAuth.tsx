@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
 import { useToast } from '../hooks/use-toast';
 
-type UserRole = 'student' | 'recruiter' | 'university';
+export type UserRole = 'student' | 'recruiter' | 'university';
 
 interface User {
   id: string;
@@ -26,7 +26,7 @@ interface AuthData {
   user: User;
 }
 
-interface RegisterData {
+export interface RegisterData {
   firstName: string;
   lastName: string;
   email: string;
