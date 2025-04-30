@@ -70,6 +70,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
     }
   };
 
+  // Helper functions for getting text based on user type
   const getCardTitle = () => {
     if (isLogin) return 'Log In';
     if (type === 'student') return 'Create an Account as Student';
