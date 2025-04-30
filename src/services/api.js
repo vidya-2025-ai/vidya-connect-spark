@@ -191,4 +191,104 @@ export const atsService = {
   }
 };
 
+// Mentorship Services
+export const mentorshipService = {
+  getAllMentorships: async () => {
+    const response = await api.get('/mentorship');
+    return response.data;
+  },
+  getMyMentorships: async () => {
+    const response = await api.get('/mentorship/my');
+    return response.data;
+  },
+  createMentorshipRequest: async (mentorshipData) => {
+    const response = await api.post('/mentorship/request', mentorshipData);
+    return response.data;
+  },
+  updateMentorshipStatus: async (id, status) => {
+    const response = await api.put(`/mentorship/${id}/status`, { status });
+    return response.data;
+  }
+};
+
+// Community Hub Services
+export const communityService = {
+  getPosts: async () => {
+    const response = await api.get('/community/posts');
+    return response.data;
+  },
+  createPost: async (postData) => {
+    const response = await api.post('/community/posts', postData);
+    return response.data;
+  },
+  getPostComments: async (postId) => {
+    const response = await api.get(`/community/posts/${postId}/comments`);
+    return response.data;
+  },
+  addComment: async (postId, commentData) => {
+    const response = await api.post(`/community/posts/${postId}/comments`, commentData);
+    return response.data;
+  }
+};
+
+// Grievance Services
+export const grievanceService = {
+  getGrievances: async () => {
+    const response = await api.get('/grievances');
+    return response.data;
+  },
+  fileGrievance: async (grievanceData) => {
+    const response = await api.post('/grievances', grievanceData);
+    return response.data;
+  },
+  respondToGrievance: async (id, responseData) => {
+    const response = await api.put(`/grievances/${id}/response`, responseData);
+    return response.data;
+  },
+  closeGrievance: async (id) => {
+    const response = await api.put(`/grievances/${id}/close`);
+    return response.data;
+  }
+};
+
+// Challenges Services
+export const challengeService = {
+  getChallenges: async () => {
+    const response = await api.get('/challenges');
+    return response.data;
+  },
+  createChallenge: async (challengeData) => {
+    const response = await api.post('/challenges', challengeData);
+    return response.data;
+  },
+  submitSolution: async (challengeId, solutionData) => {
+    const response = await api.post(`/challenges/${challengeId}/solutions`, solutionData);
+    return response.data;
+  },
+  evaluateSolution: async (challengeId, solutionId, evaluationData) => {
+    const response = await api.put(`/challenges/${challengeId}/solutions/${solutionId}/evaluate`, evaluationData);
+    return response.data;
+  }
+};
+
+// Micro-Internship Services
+export const microInternshipService = {
+  getAllMicroInternships: async () => {
+    const response = await api.get('/micro-internships');
+    return response.data;
+  },
+  createMicroInternship: async (internshipData) => {
+    const response = await api.post('/micro-internships', internshipData);
+    return response.data;
+  },
+  applyToMicroInternship: async (internshipId) => {
+    const response = await api.post(`/micro-internships/${internshipId}/apply`);
+    return response.data;
+  },
+  updateMicroInternshipStatus: async (applicationId, status) => {
+    const response = await api.put(`/micro-internships/applications/${applicationId}/status`, { status });
+    return response.data;
+  }
+};
+
 export default api;

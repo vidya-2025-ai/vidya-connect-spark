@@ -7,7 +7,17 @@ const router = express.Router();
 // Register user
 router.post('/register', async (req, res) => {
   try {
-    const { firstName, lastName, email, password, role, organization } = req.body;
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      password, 
+      role, 
+      organization,
+      university,
+      department,
+      jobTitle 
+    } = req.body;
     
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -15,15 +25,27 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'User with this email already exists' });
     }
     
-    // Create new user
-    const user = new User({
+    // Create user object based on role
+    const userData = {
       firstName,
       lastName,
       email,
       password,
-      role,
-      organization
-    });
+      role
+    };
+    
+    // Add role-specific fields
+    if (role === 'recruiter' && organization) {
+      userData.organization = organization;
+      if (jobTitle) userData.jobTitle = jobTitle;
+    } else if (role === 'university') {
+      userData.university = university;
+      userData.department = department;
+      if (jobTitle) userData.jobTitle = jobTitle;
+    }
+    
+    // Create new user
+    const user = new User(userData);
     
     await user.save();
     
@@ -34,16 +56,28 @@ router.post('/register', async (req, res) => {
       { expiresIn: '30d' }
     );
     
+    // Prepare response data removing sensitive information
+    const responseUser = {
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role
+    };
+    
+    // Add role-specific fields to response
+    if (user.role === 'recruiter') {
+      responseUser.organization = user.organization;
+      responseUser.jobTitle = user.jobTitle;
+    } else if (user.role === 'university') {
+      responseUser.university = user.university;
+      responseUser.department = user.department;
+      responseUser.jobTitle = user.jobTitle;
+    }
+    
     res.status(201).json({
       token,
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role,
-        organization: user.organization
-      }
+      user: responseUser
     });
   } catch (error) {
     console.error('Register error:', error);
@@ -75,16 +109,28 @@ router.post('/login', async (req, res) => {
       { expiresIn: '30d' }
     );
     
+    // Prepare response data removing sensitive information
+    const responseUser = {
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role
+    };
+    
+    // Add role-specific fields to response
+    if (user.role === 'recruiter') {
+      responseUser.organization = user.organization;
+      responseUser.jobTitle = user.jobTitle;
+    } else if (user.role === 'university') {
+      responseUser.university = user.university;
+      responseUser.department = user.department;
+      responseUser.jobTitle = user.jobTitle;
+    }
+    
     res.json({
       token,
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role,
-        organization: user.organization
-      }
+      user: responseUser
     });
   } catch (error) {
     console.error('Login error:', error);

@@ -15,9 +15,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface AuthFormProps {
-  type: 'student' | 'organization';
+  type: 'student' | 'organization' | 'university';
   isLogin?: boolean;
 }
 
@@ -28,6 +29,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [organization, setOrganization] = useState('');
+  const [university, setUniversity] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
+  const [department, setDepartment] = useState('');
   const [loading, setLoading] = useState(false);
   const { login, register } = useAuth();
   const { toast } = useToast();
@@ -47,8 +51,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
           lastName,
           email,
           password,
-          role: type === 'student' ? 'student' : 'recruiter',
-          organization: type === 'organization' ? organization : undefined
+          role: type === 'student' ? 'student' : type === 'organization' ? 'recruiter' : 'university',
+          organization: type === 'organization' ? organization : undefined,
+          university: type === 'university' ? university : undefined,
+          jobTitle: (type === 'organization' || type === 'university') ? jobTitle : undefined,
+          department: type === 'university' ? department : undefined
         };
         
         await register(userData);
@@ -61,91 +68,131 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
     }
   };
 
+  const getCardTitle = () => {
+    if (isLogin) return 'Log In';
+    if (type === 'student') return 'Create an Account as Student';
+    if (type === 'organization') return 'Create an Account as Recruiter';
+    return 'Create an Account as University';
+  };
+
+  const getCardDescription = () => {
+    if (isLogin) return 'Enter your credentials to access your account';
+    if (type === 'student') return 'Join InternMatch and start your learning journey';
+    if (type === 'organization') return 'Join InternMatch and connect with talented students';
+    return 'Join InternMatch and manage your university programs';
+  };
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>
-          {isLogin ? 'Log In' : 'Create an Account'}
-          {type === 'student' ? ' as Student' : ' as Organization'}
-        </CardTitle>
-        <CardDescription>
-          {isLogin 
-            ? 'Enter your credentials to access your account' 
-            : 'Join InternMatch and start your journey'}
-        </CardDescription>
+        <CardTitle>{getCardTitle()}</CardTitle>
+        <CardDescription>{getCardDescription()}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && type === 'student' && (
+          {!isLogin && (
             <>
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input 
-                  id="firstName" 
-                  type="text" 
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="John" 
-                  required 
-                  className="vs-input-focus"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input 
+                    id="firstName" 
+                    type="text" 
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="John" 
+                    required 
+                    className="vs-input-focus"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input 
+                    id="lastName" 
+                    type="text" 
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Doe" 
+                    required 
+                    className="vs-input-focus"
+                  />
+                </div>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input 
-                  id="lastName" 
-                  type="text" 
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Doe" 
-                  required 
-                  className="vs-input-focus"
-                />
-              </div>
-            </>
-          )}
-          
-          {!isLogin && type === 'organization' && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input 
-                  id="firstName" 
-                  type="text" 
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="John" 
-                  required 
-                  className="vs-input-focus"
-                />
-              </div>
+              {type === 'organization' && (
+                <div className="space-y-2">
+                  <Label htmlFor="organization">Company/Organization Name</Label>
+                  <Input 
+                    id="organization" 
+                    type="text" 
+                    value={organization}
+                    onChange={(e) => setOrganization(e.target.value)}
+                    placeholder="Company Name" 
+                    required 
+                    className="vs-input-focus"
+                  />
+                </div>
+              )}
               
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input 
-                  id="lastName" 
-                  type="text" 
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Doe" 
-                  required 
-                  className="vs-input-focus"
-                />
-              </div>
+              {type === 'organization' && (
+                <div className="space-y-2">
+                  <Label htmlFor="jobTitle">Job Title</Label>
+                  <Input 
+                    id="jobTitle" 
+                    type="text" 
+                    value={jobTitle}
+                    onChange={(e) => setJobTitle(e.target.value)}
+                    placeholder="HR Manager" 
+                    required 
+                    className="vs-input-focus"
+                  />
+                </div>
+              )}
               
-              <div className="space-y-2">
-                <Label htmlFor="organization">Organization Name</Label>
-                <Input 
-                  id="organization" 
-                  type="text" 
-                  value={organization}
-                  onChange={(e) => setOrganization(e.target.value)}
-                  placeholder="Company Name" 
-                  required 
-                  className="vs-input-focus"
-                />
-              </div>
+              {type === 'university' && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="university">University Name</Label>
+                    <Input 
+                      id="university" 
+                      type="text" 
+                      value={university}
+                      onChange={(e) => setUniversity(e.target.value)}
+                      placeholder="University Name" 
+                      required 
+                      className="vs-input-focus"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Department</Label>
+                    <Select onValueChange={setDepartment} value={department}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="career-services">Career Services</SelectItem>
+                        <SelectItem value="placement-cell">Placement Cell</SelectItem>
+                        <SelectItem value="student-affairs">Student Affairs</SelectItem>
+                        <SelectItem value="administration">Administration</SelectItem>
+                        <SelectItem value="academics">Academics</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="jobTitle">Job Title</Label>
+                    <Input 
+                      id="jobTitle" 
+                      type="text" 
+                      value={jobTitle}
+                      onChange={(e) => setJobTitle(e.target.value)}
+                      placeholder="Placement Officer" 
+                      required 
+                      className="vs-input-focus"
+                    />
+                  </div>
+                </>
+              )}
             </>
           )}
           
@@ -184,7 +231,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
           
           <Button 
             type="submit" 
-            className={type === 'student' ? 'vs-btn-primary w-full' : 'vs-btn-secondary w-full'}
+            className={`w-full ${
+              type === 'student' 
+                ? 'bg-blue-600 hover:bg-blue-700' 
+                : type === 'organization' 
+                ? 'bg-purple-600 hover:bg-purple-700'
+                : 'bg-green-600 hover:bg-green-700'
+            } text-white`}
             disabled={loading}
           >
             {loading ? 'Processing...' : isLogin ? 'Log In' : 'Sign Up'}
@@ -196,7 +249,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
           {isLogin ? "Don't have an account?" : "Already have an account?"}
           {' '}
           <a 
-            href={isLogin ? `/register${type === 'organization' ? '-org' : ''}` : `/login`} 
+            href={isLogin ? getRegistrationLink() : `/login`} 
             className="text-vs-purple-600 hover:underline"
           >
             {isLogin ? 'Sign up' : 'Log in'}
@@ -205,20 +258,32 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
       </CardFooter>
     </Card>
   );
+
+  function getRegistrationLink() {
+    if (type === 'organization') return '/register-org';
+    if (type === 'university') return '/register-university';
+    return '/register';
+  }
 };
 
 const AuthTabs: React.FC<{ isLogin?: boolean }> = ({ isLogin = false }) => {
+  const [activeTab, setActiveTab] = useState("student");
+  
   return (
-    <Tabs defaultValue="student" className="w-full max-w-md mx-auto">
-      <TabsList className="grid w-full grid-cols-2">
+    <Tabs defaultValue="student" className="w-full max-w-md mx-auto" onValueChange={setActiveTab}>
+      <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="student">Student</TabsTrigger>
         <TabsTrigger value="organization">Organization</TabsTrigger>
+        <TabsTrigger value="university">University</TabsTrigger>
       </TabsList>
       <TabsContent value="student" className="mt-6">
         <AuthForm type="student" isLogin={isLogin} />
       </TabsContent>
       <TabsContent value="organization" className="mt-6">
         <AuthForm type="organization" isLogin={isLogin} />
+      </TabsContent>
+      <TabsContent value="university" className="mt-6">
+        <AuthForm type="university" isLogin={isLogin} />
       </TabsContent>
     </Tabs>
   );

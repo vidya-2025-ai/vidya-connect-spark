@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import RegisterOrg from "./pages/auth/RegisterOrg";
+import RegisterUniversity from "./pages/auth/RegisterUniversity";
 import StudentDashboard from "./pages/dashboard/StudentDashboard";
 import ExploreOpportunities from "./pages/student/ExploreOpportunities";
 import ApplicationsTracker from "./pages/student/ApplicationsTracker";
@@ -57,6 +58,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/register-org" element={<RegisterOrg />} />
+                <Route path="/register-university" element={<RegisterUniversity />} />
                 <Route path="/student/dashboard" element={<StudentDashboard />} />
                 <Route path="/student/explore" element={<ExploreOpportunities />} />
                 <Route path="/student/applications" element={<ApplicationsTracker />} />
