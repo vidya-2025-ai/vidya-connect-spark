@@ -4,10 +4,26 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
 import { useToast } from '../hooks/use-toast';
 
-const AuthContext = createContext();
+// Define the type for our context
+type AuthContextType = {
+  user: any | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<any>;
+  register: (userData: any) => Promise<any>;
+  logout: () => void;
+};
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+// Create the context with a default value matching the expected type
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: false,
+  login: async () => null,
+  register: async () => null,
+  logout: () => {},
+});
+
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -34,7 +50,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Login function
-  const login = async (email, password) => {
+  const login = async (email: string, password: string) => {
     try {
       setLoading(true);
       const response = await authService.login(email, password);
@@ -57,7 +73,7 @@ export const AuthProvider = ({ children }) => {
       });
       
       return response.user;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
       toast({
         title: "Login Failed",
@@ -71,7 +87,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Register function
-  const register = async (userData) => {
+  const register = async (userData: any) => {
     try {
       setLoading(true);
       const response = await authService.register(userData);
@@ -94,7 +110,7 @@ export const AuthProvider = ({ children }) => {
       });
       
       return response.user;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Register error:', error);
       toast({
         title: "Registration Failed",
