@@ -142,14 +142,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   // Logout function
-  const logout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
-    navigate('/login');
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    });
+  const logout = async () => {
+    try {
+      // Call the logout API for tracking
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout API error:', error);
+    } finally {
+      // Always clear local storage even if API fails
+      localStorage.removeItem('token');
+      setUser(null);
+      navigate('/login');
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+    }
   };
 
   const redirectBasedOnRole = (role: UserRole) => {

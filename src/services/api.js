@@ -33,6 +33,10 @@ export const authService = {
     const response = await api.post('/auth/register', userData);
     return response.data;
   },
+  logout: async () => {
+    const response = await api.post('/auth/logout');
+    return response.data;
+  },
   getCurrentUser: async () => {
     const response = await api.get('/users/me');
     return response.data;

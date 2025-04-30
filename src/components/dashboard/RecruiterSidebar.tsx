@@ -15,7 +15,8 @@ import {
   ShieldCheck,
   Award,
   X,
-  LogOut
+  LogOut,
+  FilePlus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/settings/ThemeToggle';
@@ -56,6 +57,7 @@ const RecruiterSidebar: React.FC<RecruiterSidebarProps> = ({
   const menuItems = [
     { label: 'Dashboard', icon: Home, href: '/recruiter/dashboard' },
     { label: 'Posted Jobs', icon: Briefcase, href: '/recruiter/jobs' },
+    { label: 'Post New Job', icon: FilePlus, href: '/recruiter/post-internship' },
     { label: 'Applications', icon: FileText, href: '/recruiter/applications' },
     { label: 'Candidates', icon: Users, href: '/recruiter/candidates' },
     { label: 'Schedule', icon: Calendar, href: '/recruiter/schedule' },

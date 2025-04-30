@@ -13,7 +13,7 @@ const RegisterOrg = () => {
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Join as an Organization
+              Join as a Recruiter
             </h2>
             <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
               Create your account to post opportunities and connect with students

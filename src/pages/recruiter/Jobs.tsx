@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import RecruiterSidebar from '@/components/dashboard/RecruiterSidebar';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
@@ -14,7 +15,8 @@ import {
   MapPin, 
   Users, 
   Star,
-  Bell 
+  Bell,
+  FilePlus 
 } from 'lucide-react';
 import { 
   Select,
@@ -24,88 +26,74 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { opportunityService } from '@/services/api';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 const Jobs = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
+  const [opportunities, setOpportunities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   
-  const jobs = [
-    {
-      id: 1,
-      title: "Senior Software Engineer",
-      department: "Engineering",
-      location: "Remote",
-      type: "Full-time",
-      applications: 45,
-      status: "Active",
-      postedDate: "2025-04-15",
-      skills: ["React", "TypeScript", "Node.js"],
-      description: "We are looking for an experienced software engineer to join our team and help build robust applications.",
-      requiredSkills: ["JavaScript", "React", "TypeScript", "Node.js"],
-      mentorshipAvailable: true,
-      certificationOffered: true
-    },
-    {
-      id: 2,
-      title: "Product Manager",
-      department: "Product",
-      location: "Hybrid",
-      type: "Full-time",
-      applications: 32,
-      status: "Active",
-      postedDate: "2025-04-18",
-      skills: ["Product Strategy", "User Research", "Analytics"],
-      description: "Lead product development from concept to launch, working closely with engineering and design teams.",
-      requiredSkills: ["Product Management", "Agile", "Data Analysis"],
-      mentorshipAvailable: true,
-      certificationOffered: false
-    },
-    {
-      id: 3,
-      title: "UI/UX Designer",
-      department: "Design",
-      location: "On-site",
-      type: "Contract",
-      applications: 28,
-      status: "Closed",
-      postedDate: "2025-04-10",
-      skills: ["UI Design", "Figma", "User Testing"],
-      description: "Design beautiful and functional interfaces for our web and mobile applications.",
-      requiredSkills: ["UI/UX", "Figma", "Adobe Creative Suite"],
-      mentorshipAvailable: false,
-      certificationOffered: true
-    },
-    {
-      id: 4,
-      title: "Data Science Intern",
-      department: "Analytics",
-      location: "Remote",
-      type: "Internship",
-      applications: 64,
-      status: "Active",
-      postedDate: "2025-04-20",
-      skills: ["Python", "Data Analysis", "Machine Learning"],
-      description: "Join our data team to gain hands-on experience in analyzing large datasets and building predictive models.",
-      requiredSkills: ["Python", "Statistics", "SQL"],
-      mentorshipAvailable: true,
-      certificationOffered: true
-    },
-    {
-      id: 5,
-      title: "Marketing Challenge",
-      department: "Marketing",
-      location: "Remote",
-      type: "Challenge",
-      applications: 39,
-      status: "Active",
-      postedDate: "2025-04-22",
-      skills: ["Content Creation", "Social Media", "Analytics"],
-      description: "A 2-week challenge to develop a comprehensive social media campaign for our new product launch.",
-      requiredSkills: ["Marketing", "Content Creation", "Social Media"],
-      mentorshipAvailable: true,
-      certificationOffered: true
+  useEffect(() => {
+    const fetchOpportunities = async () => {
+      try {
+        setLoading(true);
+        const data = await opportunityService.getRecruiterOpportunities();
+        setOpportunities(data);
+      } catch (error) {
+        console.error('Failed to fetch opportunities:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load your job postings. Please try again later.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchOpportunities();
+  }, [toast]);
+  
+  const handlePostNewJob = () => {
+    navigate('/recruiter/post-internship');
+  };
+  
+  const handleToggleStatus = async (id, currentStatus) => {
+    try {
+      await opportunityService.updateOpportunity(id, {
+        isActive: !currentStatus
+      });
+      
+      // Update local state
+      setOpportunities(opportunities.map(job => 
+        job._id === id ? {...job, isActive: !currentStatus} : job
+      ));
+      
+      toast({
+        title: "Status Updated",
+        description: `Job has been ${!currentStatus ? 'activated' : 'deactivated'}.`
+      });
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update job status. Please try again.",
+        variant: "destructive"
+      });
     }
-  ];
+  };
+  
+  // Filter opportunities based on search term
+  const filteredOpportunities = opportunities.filter(job => 
+    job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    job.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
@@ -142,7 +130,11 @@ const Jobs = () => {
               <div className="ml-3 relative">
                 <div className="flex items-center">
                   <Avatar>
-                    <AvatarFallback>SR</AvatarFallback>
+                    <AvatarFallback>
+                      {user?.firstName && user?.lastName 
+                        ? `${user.firstName[0]}${user.lastName[0]}` 
+                        : 'RC'}
+                    </AvatarFallback>
                   </Avatar>
                 </div>
               </div>
@@ -160,8 +152,8 @@ const Jobs = () => {
                     Manage your job postings and track applications
                   </p>
                 </div>
-                <Button className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
+                <Button className="flex items-center gap-2" onClick={handlePostNewJob}>
+                  <FilePlus className="h-4 w-4" />
                   Post New Job
                 </Button>
               </div>
@@ -240,66 +232,101 @@ const Jobs = () => {
                 </Card>
               )}
 
-              <div className="space-y-4">
-                {jobs.map((job) => (
-                  <Card key={job.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{job.title}</h3>
-                          <div className="mt-1 space-y-1">
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {job.department} • {job.location} • {job.type}
-                            </p>
+              {loading ? (
+                <div className="flex justify-center py-10">
+                  <p>Loading jobs...</p>
+                </div>
+              ) : filteredOpportunities.length > 0 ? (
+                <div className="space-y-4">
+                  {filteredOpportunities.map((job) => (
+                    <Card key={job._id} className="hover:shadow-md transition-shadow">
+                      <CardHeader className="pb-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{job.title}</h3>
+                            <div className="mt-1 space-y-1">
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                {job.type} • {job.location || 'No location specified'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <Badge variant={job.isActive ? 'default' : 'secondary'}>
+                              {job.isActive ? 'Active' : 'Closed'}
+                            </Badge>
                           </div>
                         </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <Badge variant={job.status === 'Active' ? 'default' : 'secondary'}>
-                            {job.status}
-                          </Badge>
+                      </CardHeader>
+                      <CardContent className="pb-3">
+                        <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                          {job.description.length > 200 
+                            ? `${job.description.substring(0, 200)}...` 
+                            : job.description}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {job.skillsRequired && job.skillsRequired.map((skill) => (
+                            <Badge key={skill} variant="outline" className="text-xs">
+                              {skill}
+                            </Badge>
+                          ))}
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pb-3">
-                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">{job.description}</p>
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {job.skills.map((skill) => (
-                          <Badge key={skill} variant="outline" className="text-xs">
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          Posted: {new Date(job.postedDate).toLocaleDateString()}
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                          <Users className="h-4 w-4 mr-1" />
-                          {job.applications} applications
-                        </div>
-                        {job.mentorshipAvailable && (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                            <Star className="h-4 w-4 mr-1" />
-                            Mentorship
+                            <Calendar className="h-4 w-4 mr-1" />
+                            Posted: {new Date(job.createdAt).toLocaleDateString()}
                           </div>
-                        )}
-                        {job.certificationOffered && (
                           <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                            <Briefcase className="h-4 w-4 mr-1" />
-                            Certification
+                            <Users className="h-4 w-4 mr-1" />
+                            {job.applications ? job.applications.length : 0} applications
                           </div>
-                        )}
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex flex-wrap justify-end gap-2">
-                      <Button variant="outline" size="sm">Edit</Button>
-                      <Button variant="outline" size="sm">View Applicants</Button>
-                      <Button size="sm">{job.status === 'Active' ? 'Close Job' : 'Reopen Job'}</Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
+                          {job.deadline && (
+                            <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                              <Calendar className="h-4 w-4 mr-1" />
+                              Deadline: {new Date(job.deadline).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                      <CardFooter className="flex flex-wrap justify-end gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => navigate(`/recruiter/jobs/${job._id}/edit`)}
+                        >
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => navigate(`/recruiter/jobs/${job._id}/applicants`)}
+                        >
+                          View Applicants
+                        </Button>
+                        <Button 
+                          size="sm"
+                          onClick={() => handleToggleStatus(job._id, job.isActive)}
+                        >
+                          {job.isActive ? 'Close Job' : 'Reopen Job'}
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
+                  <Briefcase className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No jobs found</h3>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    {searchTerm ? 'No jobs match your search criteria.' : 'Get started by posting your first job.'}
+                  </p>
+                  <div className="mt-6">
+                    <Button onClick={handlePostNewJob}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Post New Job
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

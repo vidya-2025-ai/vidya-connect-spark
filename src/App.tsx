@@ -38,6 +38,7 @@ import RecruiterCommunity from "./pages/recruiter/Community";
 import ATSCalculator from "./pages/student/ATSCalculator";
 import ResumeBuilder from "./pages/student/ResumeBuilder";
 import AssessmentStats from "./pages/recruiter/AssessmentStats";
+import PostInternship from "./pages/recruiter/PostInternship";
 
 // Create QueryClient outside the component
 const queryClient = new QueryClient();
@@ -72,6 +73,7 @@ function App() {
                 <Route path="/student/resume-builder" element={<ResumeBuilder />} />
                 <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
                 <Route path="/recruiter/jobs" element={<RecruiterJobs />} />
+                <Route path="/recruiter/post-internship" element={<PostInternship />} />
                 <Route path="/recruiter/applications" element={<RecruiterApplications />} />
                 <Route path="/recruiter/candidates" element={<RecruiterCandidates />} />
                 <Route path="/recruiter/schedule" element={<RecruiterSchedule />} />
