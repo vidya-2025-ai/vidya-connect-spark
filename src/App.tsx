@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import React from "react";
+import React, { useState } from "react";
 import { AuthProvider } from "./hooks/useAuth";
 
 import Index from "./pages/Index";
@@ -40,10 +40,11 @@ import ATSCalculator from "./pages/student/ATSCalculator";
 import ResumeBuilder from "./pages/student/ResumeBuilder";
 import AssessmentStats from "./pages/recruiter/AssessmentStats";
 
-const queryClient = new QueryClient();
+const App = () => {
+  // Create a new QueryClient instance inside the component
+  const [queryClient] = useState(() => new QueryClient());
 
-const App = () => (
-  <React.StrictMode>
+  return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <div className="min-h-screen w-full">
@@ -90,7 +91,7 @@ const App = () => (
         </div>
       </TooltipProvider>
     </QueryClientProvider>
-  </React.StrictMode>
-);
+  );
+};
 
 export default App;
