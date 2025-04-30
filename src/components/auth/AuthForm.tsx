@@ -13,6 +13,8 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthFormProps {
   type: 'student' | 'organization';
@@ -23,24 +25,40 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [organization, setOrganization] = useState('');
   const [loading, setLoading] = useState(false);
+  const { login, register } = useAuth();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
-    // Simulate authentication
-    setTimeout(() => {
-      setLoading(false);
+    try {
       if (isLogin) {
-        // Navigate to respective dashboard based on user type
-        navigate(type === 'student' ? '/student/dashboard' : '/organization/dashboard');
+        // Login user
+        await login(email, password);
       } else {
-        // For registration, navigate to the onboarding page
-        navigate(type === 'student' ? '/student/onboarding' : '/organization/onboarding');
+        // Register user
+        const userData = {
+          firstName,
+          lastName,
+          email,
+          password,
+          role: type === 'student' ? 'student' : 'recruiter',
+          organization: type === 'organization' ? organization : undefined
+        };
+        
+        await register(userData);
       }
-    }, 1500);
+    } catch (error) {
+      console.error('Authentication error:', error);
+      // Error is already handled in the useAuth hook
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -53,26 +71,82 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
         <CardDescription>
           {isLogin 
             ? 'Enter your credentials to access your account' 
-            : 'Join Vidya-Samveda and start your journey'}
+            : 'Join InternMatch and start your journey'}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
-            <div className="space-y-2">
-              <Label htmlFor="name">
-                {type === 'student' ? 'Full Name' : 'Organization Name'}
-              </Label>
-              <Input 
-                id="name" 
-                type="text" 
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={type === 'student' ? 'John Doe' : 'Organization Name'} 
-                required 
-                className="vs-input-focus"
-              />
-            </div>
+          {!isLogin && type === 'student' && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input 
+                  id="firstName" 
+                  type="text" 
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="John" 
+                  required 
+                  className="vs-input-focus"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input 
+                  id="lastName" 
+                  type="text" 
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Doe" 
+                  required 
+                  className="vs-input-focus"
+                />
+              </div>
+            </>
+          )}
+          
+          {!isLogin && type === 'organization' && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input 
+                  id="firstName" 
+                  type="text" 
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="John" 
+                  required 
+                  className="vs-input-focus"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input 
+                  id="lastName" 
+                  type="text" 
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Doe" 
+                  required 
+                  className="vs-input-focus"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="organization">Organization Name</Label>
+                <Input 
+                  id="organization" 
+                  type="text" 
+                  value={organization}
+                  onChange={(e) => setOrganization(e.target.value)}
+                  placeholder="Company Name" 
+                  required 
+                  className="vs-input-focus"
+                />
+              </div>
+            </>
           )}
           
           <div className="space-y-2">
