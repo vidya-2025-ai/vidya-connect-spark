@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,7 +10,6 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
-import RegisterOrg from "./pages/auth/RegisterOrg";
 import StudentDashboard from "./pages/dashboard/StudentDashboard";
 import ExploreOpportunities from "./pages/student/ExploreOpportunities";
 import ApplicationsTracker from "./pages/student/ApplicationsTracker";
@@ -56,7 +54,6 @@ function App() {
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/register-org" element={<RegisterOrg />} />
                 <Route path="/student/dashboard" element={<StudentDashboard />} />
                 <Route path="/student/explore" element={<ExploreOpportunities />} />
                 <Route path="/student/applications" element={<ApplicationsTracker />} />
