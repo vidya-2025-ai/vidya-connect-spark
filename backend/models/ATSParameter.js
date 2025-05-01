@@ -12,22 +12,34 @@ const ATSParameterSchema = new mongoose.Schema({
     required: true
   },
   requiredSkills: [{
-    skill: String,
+    skill: {
+      type: String,
+      required: true
+    },
     weight: {
       type: Number,
-      default: 1
+      default: 1,
+      min: 1,
+      max: 10
     }
   }],
   requiredExperience: {
     type: Number,
     default: 0
   },
-  requiredEducation: String,
+  requiredEducation: {
+    type: String
+  },
   keywords: [{
-    keyword: String,
+    keyword: {
+      type: String,
+      required: true
+    },
     weight: {
       type: Number,
-      default: 1
+      default: 1,
+      min: 1,
+      max: 5
     }
   }],
   formatRequirements: {

@@ -9,46 +9,92 @@ const ResumeSchema = new mongoose.Schema({
   },
   title: {
     type: String,
-    default: 'My Resume'
+    required: true
   },
   personalInfo: {
-    name: String,
-    email: String,
+    name: {
+      type: String,
+      required: true
+    },
+    email: {
+      type: String,
+      required: true
+    },
     phone: String,
     address: String,
     linkedin: String,
     website: String
   },
   education: [{
-    institution: String,
-    degree: String,
-    field: String,
-    startDate: Date,
+    institution: {
+      type: String,
+      required: true
+    },
+    degree: {
+      type: String,
+      required: true
+    },
+    field: {
+      type: String,
+      required: true
+    },
+    startDate: {
+      type: Date,
+      required: true
+    },
     endDate: Date,
     gpa: Number,
     description: String
   }],
   experience: [{
-    company: String,
-    position: String,
+    company: {
+      type: String,
+      required: true
+    },
+    position: {
+      type: String,
+      required: true
+    },
     location: String,
-    startDate: Date,
+    startDate: {
+      type: Date,
+      required: true
+    },
     endDate: Date,
-    current: Boolean,
+    current: {
+      type: Boolean,
+      default: false
+    },
     description: String
   }],
-  skills: [String],
+  skills: [{
+    type: String
+  }],
   projects: [{
-    title: String,
-    description: String,
-    technologies: [String],
+    title: {
+      type: String,
+      required: true
+    },
+    description: {
+      type: String,
+      required: true
+    },
+    technologies: [{
+      type: String
+    }],
     link: String,
     startDate: Date,
     endDate: Date
   }],
   certifications: [{
-    name: String,
-    issuer: String,
+    name: {
+      type: String,
+      required: true
+    },
+    issuer: {
+      type: String,
+      required: true
+    },
     date: Date,
     id: String
   }],

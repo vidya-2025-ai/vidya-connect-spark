@@ -99,6 +99,10 @@ router.post('/login', async (req, res) => {
       { expiresIn: '30d' }
     );
     
+    // Update lastActive
+    user.lastActive = Date.now();
+    await user.save();
+    
     // Prepare response data removing sensitive information
     const responseUser = {
       id: user._id,

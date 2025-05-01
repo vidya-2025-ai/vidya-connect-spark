@@ -7,12 +7,15 @@ const SkillSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
-  category: String,
-  description: String,
-  level: {
-    type: Number,
-    min: 1,
-    max: 5
+  category: {
+    type: String
+  },
+  description: {
+    type: String
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 });
 
@@ -29,12 +32,15 @@ const UserSkillSchema = new mongoose.Schema({
   },
   level: {
     type: Number,
+    required: true,
     min: 1,
-    max: 5,
-    required: true
+    max: 5
   },
   assessments: [{
-    score: Number,
+    score: {
+      type: Number,
+      required: true
+    },
     date: {
       type: Date,
       default: Date.now
@@ -43,10 +49,18 @@ const UserSkillSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Certificate'
     }
-  }]
+  }],
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
-const Skill = mongoose.model('Skill', SkillSchema);
-const UserSkill = mongoose.model('UserSkill', UserSkillSchema);
-
-module.exports = { Skill, UserSkill };
+module.exports = {
+  Skill: mongoose.model('Skill', SkillSchema),
+  UserSkill: mongoose.model('UserSkill', UserSkillSchema)
+};

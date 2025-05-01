@@ -21,20 +21,33 @@ const ApplicationSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  resumeUrl: String,
-  coverLetter: String,
-  notes: String,
+  resumeUrl: {
+    type: String
+  },
+  coverLetter: {
+    type: String
+  },
+  notes: {
+    type: String
+  },
   activities: [{
     type: {
+      type: String,
+      required: true
+    },
+    description: {
       type: String,
       required: true
     },
     date: {
       type: Date,
       default: Date.now
-    },
-    description: String
-  }]
+    }
+  }],
+  lastUpdated: {
+    type: Date,
+    default: Date.now
+  }
 });
 
 module.exports = mongoose.model('Application', ApplicationSchema);

@@ -15,33 +15,53 @@ const OpportunitySchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  requirements: [String],
-  location: String,
+  requirements: [{
+    type: String
+  }],
+  location: {
+    type: String
+  },
   type: {
     type: String,
     enum: ['Internship', 'Research', 'Volunteer', 'Part-time', 'Full-time'],
+    default: 'Internship'
+  },
+  duration: {
+    type: String,
     required: true
   },
-  duration: String,
   stipend: {
-    amount: Number,
+    amount: {
+      type: Number,
+      default: 0
+    },
     currency: {
       type: String,
       default: 'INR'
     }
   },
-  deadline: Date,
-  skillsRequired: [String],
-  tags: [String],
-  applications: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Application'
+  deadline: {
+    type: Date
+  },
+  skillsRequired: [{
+    type: String
+  }],
+  tags: [{
+    type: String
   }],
   isActive: {
     type: Boolean,
     default: true
   },
+  applications: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Application'
+  }],
   createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
     type: Date,
     default: Date.now
   }

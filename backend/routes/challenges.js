@@ -1,9 +1,9 @@
 
 const express = require('express');
-const auth = require('../middleware/auth');
-const { Challenge, Solution } = require('../models/Challenge');
-const User = require('../models/User');
 const router = express.Router();
+const auth = require('../middleware/auth');
+const { Challenge } = require('../models/Challenge');
+const User = require('../models/User');
 
 // Get all challenges
 router.get('/', async (req, res) => {
@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Create a new challenge (recruiters only)
+// Create a challenge (recruiters only)
 router.post('/', auth, async (req, res) => {
   try {
     // Ensure user is a recruiter
@@ -38,12 +38,7 @@ router.post('/', auth, async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' });
     }
     
-    const { 
-      title, 
-      description, 
-      skillsRequired,
-      deadline
-    } = req.body;
+    const { title, description, skillsRequired, deadline } = req.body;
     
     if (!title || !description || !deadline) {
       return res.status(400).json({ message: 'Title, description, and deadline are required' });
@@ -60,9 +55,10 @@ router.post('/', auth, async (req, res) => {
       title,
       description,
       organization: req.user.id,
-      organizationName: user.organization || `${user.firstName} ${user.lastName}`,
+      organizationName: user.organization || user.firstName + ' ' + user.lastName,
       skillsRequired: skillsRequired || [],
-      deadline: new Date(deadline)
+      deadline: new Date(deadline),
+      solutions: []
     });
     
     await challenge.save();
@@ -83,40 +79,67 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// Submit solution to a challenge (students only)
-router.post('/:challengeId/solutions', auth, async (req, res) => {
+// Get challenge details
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const challenge = await Challenge.findById(id);
+    
+    if (!challenge) {
+      return res.status(404).json({ message: 'Challenge not found' });
+    }
+    
+    res.json({
+      id: challenge._id,
+      title: challenge.title,
+      description: challenge.description,
+      organization: challenge.organizationName,
+      skillsRequired: challenge.skillsRequired,
+      deadline: challenge.deadline,
+      submissionCount: challenge.solutions.length,
+      createdAt: challenge.createdAt,
+      isActive: challenge.isActive
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Submit solution to a challenge
+router.post('/:id/solutions', auth, async (req, res) => {
   try {
     // Ensure user is a student
     if (req.user.role !== 'student') {
       return res.status(403).json({ message: 'Only students can submit solutions' });
     }
     
-    const { challengeId } = req.params;
+    const { id } = req.params;
     const { content, attachments } = req.body;
     
     if (!content) {
       return res.status(400).json({ message: 'Solution content is required' });
     }
     
-    // Find challenge
-    const challenge = await Challenge.findById(challengeId);
+    // Find the challenge
+    const challenge = await Challenge.findById(id);
     if (!challenge) {
       return res.status(404).json({ message: 'Challenge not found' });
     }
     
-    // Check if deadline is passed
+    // Check if deadline has passed
     if (new Date() > new Date(challenge.deadline)) {
-      return res.status(400).json({ message: 'Deadline for this challenge has passed' });
+      return res.status(400).json({ message: 'Challenge deadline has passed' });
     }
     
     // Check if user already submitted a solution
-    const existingSolution = await Solution.findOne({
-      challenge: challengeId,
-      student: req.user.id
-    });
+    const existingSolution = challenge.solutions.find(
+      solution => solution.student.toString() === req.user.id
+    );
     
     if (existingSolution) {
-      return res.status(400).json({ message: 'You have already submitted a solution for this challenge' });
+      return res.status(400).json({ message: 'You have already submitted a solution' });
     }
     
     // Get user details
@@ -126,31 +149,31 @@ router.post('/:challengeId/solutions', auth, async (req, res) => {
     }
     
     // Create solution
-    const solution = new Solution({
-      challenge: challengeId,
+    const solution = {
       student: req.user.id,
       studentName: `${user.firstName} ${user.lastName}`,
       content,
       attachments: attachments || []
-    });
+    };
     
-    await solution.save();
-    
-    // Update challenge with solution reference
-    challenge.solutions.push(solution._id);
+    // Add solution to challenge
+    challenge.solutions.push(solution);
     await challenge.save();
     
+    // Get the newly added solution
+    const newSolution = challenge.solutions[challenge.solutions.length - 1];
+    
     res.status(201).json({
-      id: solution._id,
-      challenge: challengeId,
+      id: newSolution._id,
+      challenge: id,
       student: {
         id: req.user.id,
         name: `${user.firstName} ${user.lastName}`
       },
-      content: solution.content,
-      attachments: solution.attachments,
-      status: 'submitted',
-      submittedAt: solution.submittedAt
+      content: newSolution.content,
+      attachments: newSolution.attachments,
+      status: newSolution.status,
+      submittedAt: newSolution.submittedAt
     });
   } catch (error) {
     console.error(error);
@@ -158,18 +181,18 @@ router.post('/:challengeId/solutions', auth, async (req, res) => {
   }
 });
 
-// Get all solutions for a challenge (recruiter only)
-router.get('/:challengeId/solutions', auth, async (req, res) => {
+// Get solutions for a challenge (for recruiters)
+router.get('/:id/solutions', auth, async (req, res) => {
   try {
     // Ensure user is a recruiter
     if (req.user.role !== 'recruiter') {
       return res.status(403).json({ message: 'Unauthorized' });
     }
     
-    const { challengeId } = req.params;
+    const { id } = req.params;
     
-    // Find challenge to check ownership
-    const challenge = await Challenge.findById(challengeId);
+    // Find the challenge
+    const challenge = await Challenge.findById(id);
     if (!challenge) {
       return res.status(404).json({ message: 'Challenge not found' });
     }
@@ -179,25 +202,23 @@ router.get('/:challengeId/solutions', auth, async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' });
     }
     
-    // Get all solutions for this challenge
-    const solutions = await Solution.find({ challenge: challengeId });
-    
-    // Format the response
-    const formattedSolutions = solutions.map(solution => ({
+    // Format the solutions
+    const solutions = challenge.solutions.map(solution => ({
       id: solution._id,
+      challenge: id,
       student: {
         id: solution.student,
         name: solution.studentName
       },
       content: solution.content,
       attachments: solution.attachments,
-      status: solution.evaluation ? 'evaluated' : 'submitted',
-      score: solution.evaluation ? solution.evaluation.score : undefined,
-      feedback: solution.evaluation ? solution.evaluation.feedback : undefined,
+      score: solution.score,
+      feedback: solution.feedback,
+      status: solution.status,
       submittedAt: solution.submittedAt
     }));
     
-    res.json(formattedSolutions);
+    res.json(solutions);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -215,21 +236,11 @@ router.put('/:challengeId/solutions/:solutionId/evaluate', auth, async (req, res
     const { challengeId, solutionId } = req.params;
     const { score, feedback } = req.body;
     
-    if (!score || !feedback) {
-      return res.status(400).json({ message: 'Score and feedback are required' });
+    if (!score) {
+      return res.status(400).json({ message: 'Score is required' });
     }
     
-    if (score < 0 || score > 100) {
-      return res.status(400).json({ message: 'Score must be between 0 and 100' });
-    }
-    
-    // Find solution
-    const solution = await Solution.findById(solutionId);
-    if (!solution) {
-      return res.status(404).json({ message: 'Solution not found' });
-    }
-    
-    // Find challenge to check ownership
+    // Find the challenge
     const challenge = await Challenge.findById(challengeId);
     if (!challenge) {
       return res.status(404).json({ message: 'Challenge not found' });
@@ -240,22 +251,32 @@ router.put('/:challengeId/solutions/:solutionId/evaluate', auth, async (req, res
       return res.status(403).json({ message: 'Unauthorized' });
     }
     
-    // Add evaluation
-    solution.evaluation = {
-      score,
-      feedback,
-      evaluatedBy: req.user.id,
-      evaluatedAt: new Date()
-    };
+    // Find the solution
+    const solution = challenge.solutions.id(solutionId);
+    if (!solution) {
+      return res.status(404).json({ message: 'Solution not found' });
+    }
     
-    await solution.save();
+    // Update the solution
+    solution.score = score;
+    solution.feedback = feedback || '';
+    solution.status = 'evaluated';
+    
+    await challenge.save();
     
     res.json({
       id: solution._id,
-      status: 'evaluated',
-      score,
-      feedback,
-      evaluatedAt: solution.evaluation.evaluatedAt
+      challenge: challengeId,
+      student: {
+        id: solution.student,
+        name: solution.studentName
+      },
+      content: solution.content,
+      attachments: solution.attachments,
+      score: solution.score,
+      feedback: solution.feedback,
+      status: solution.status,
+      submittedAt: solution.submittedAt
     });
   } catch (error) {
     console.error(error);

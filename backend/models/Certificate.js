@@ -19,15 +19,29 @@ const CertificateSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
-  expiryDate: Date,
-  credentialId: String,
-  credentialUrl: String,
-  certificateImage: String,
-  skills: [String],
+  expiryDate: {
+    type: Date
+  },
+  credentialId: {
+    type: String
+  },
+  credentialUrl: {
+    type: String
+  },
+  certificateImage: {
+    type: String
+  },
+  skills: [{
+    type: String
+  }],
   status: {
     type: String,
     enum: ['In Progress', 'Completed'],
     default: 'Completed'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 });
 
