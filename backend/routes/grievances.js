@@ -1,54 +1,48 @@
 
 const express = require('express');
 const auth = require('../middleware/auth');
+const Grievance = require('../models/Grievance');
+const User = require('../models/User');
 const router = express.Router();
 
 // Get all grievances relevant to user
 router.get('/', auth, async (req, res) => {
   try {
-    // Fetch grievances logic based on user role
-    // For now, returning mock data
-    const grievances = [
-      {
-        id: '1',
-        title: 'Issue with internship supervisor',
-        description: 'My supervisor has been assigning tasks outside the scope...',
-        status: 'pending',
-        createdBy: {
-          id: '101',
-          name: 'Aditya Kumar',
-          role: 'student'
-        },
-        responses: [],
-        createdAt: new Date().toISOString()
+    let grievances;
+    
+    // If recruiter, get all grievances
+    // If student, get only their own grievances
+    if (req.user.role === 'recruiter') {
+      grievances = await Grievance.find().sort({ createdAt: -1 });
+    } else {
+      grievances = await Grievance.find({ createdBy: req.user.id }).sort({ createdAt: -1 });
+    }
+    
+    // Format the response
+    const formattedGrievances = grievances.map(grievance => ({
+      id: grievance._id,
+      title: grievance.title,
+      description: grievance.description,
+      status: grievance.status,
+      createdBy: {
+        id: grievance.createdBy,
+        name: grievance.creatorName,
+        role: grievance.creatorRole
       },
-      {
-        id: '2',
-        title: 'Stipend payment delayed',
-        description: 'I have not received my stipend for the past month...',
-        status: 'resolved',
-        createdBy: {
-          id: '102',
-          name: 'Neha Patil',
-          role: 'student'
+      responses: grievance.responses.map(response => ({
+        id: response._id,
+        content: response.content,
+        responder: {
+          id: response.responder,
+          name: response.responderName,
+          role: response.responderRole
         },
-        responses: [
-          {
-            id: '201',
-            content: 'We have processed the payment. It should reflect in 2-3 working days.',
-            responder: {
-              id: '301',
-              name: 'HR Department',
-              role: 'recruiter'
-            },
-            createdAt: new Date(Date.now() - 172800000).toISOString()
-          }
-        ],
-        createdAt: new Date(Date.now() - 604800000).toISOString()
-      }
-    ];
-
-    res.json(grievances);
+        createdAt: response.createdAt
+      })),
+      createdAt: grievance.createdAt
+    }));
+    
+    res.json(formattedGrievances);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -64,23 +58,36 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ message: 'Title and description are required' });
     }
     
-    // Create grievance logic would go here
-    // For now, returning mock response
-    const grievance = {
-      id: Math.random().toString(36).substring(2, 15),
+    // Get user data
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Create new grievance
+    const grievance = new Grievance({
       title,
       description,
-      status: 'pending',
+      createdBy: req.user.id,
+      creatorName: `${user.firstName} ${user.lastName}`,
+      creatorRole: user.role
+    });
+    
+    await grievance.save();
+    
+    res.status(201).json({
+      id: grievance._id,
+      title: grievance.title,
+      description: grievance.description,
+      status: grievance.status,
       createdBy: {
-        id: req.user.id,
-        name: `${req.user.firstName} ${req.user.lastName}`,
-        role: req.user.role
+        id: grievance.createdBy,
+        name: grievance.creatorName,
+        role: grievance.creatorRole
       },
       responses: [],
-      createdAt: new Date().toISOString()
-    };
-    
-    res.status(201).json(grievance);
+      createdAt: grievance.createdAt
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -97,20 +104,44 @@ router.put('/:id/response', auth, async (req, res) => {
       return res.status(400).json({ message: 'Response content is required' });
     }
     
-    // Add response logic would go here
-    // For now, returning mock response
+    // Find grievance
+    const grievance = await Grievance.findById(id);
+    if (!grievance) {
+      return res.status(404).json({ message: 'Grievance not found' });
+    }
+    
+    // Get user data
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Create response
     const response = {
-      id: Math.random().toString(36).substring(2, 15),
       content,
-      responder: {
-        id: req.user.id,
-        name: `${req.user.firstName} ${req.user.lastName}`,
-        role: req.user.role
-      },
-      createdAt: new Date().toISOString()
+      responder: req.user.id,
+      responderName: `${user.firstName} ${user.lastName}`,
+      responderRole: user.role,
+      createdAt: new Date()
     };
     
-    res.json(response);
+    // Add response to grievance
+    grievance.responses.push(response);
+    await grievance.save();
+    
+    // Get the newly added response
+    const newResponse = grievance.responses[grievance.responses.length - 1];
+    
+    res.json({
+      id: newResponse._id,
+      content: newResponse.content,
+      responder: {
+        id: newResponse.responder,
+        name: newResponse.responderName,
+        role: newResponse.responderRole
+      },
+      createdAt: newResponse.createdAt
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -122,8 +153,22 @@ router.put('/:id/close', auth, async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Close grievance logic would go here
-    // For now, returning mock response
+    // Find grievance
+    const grievance = await Grievance.findById(id);
+    if (!grievance) {
+      return res.status(404).json({ message: 'Grievance not found' });
+    }
+    
+    // Check permission
+    // Only the creator or a recruiter can close a grievance
+    if (grievance.createdBy.toString() !== req.user.id && req.user.role !== 'recruiter') {
+      return res.status(403).json({ message: 'Unauthorized to close this grievance' });
+    }
+    
+    // Update status to closed
+    grievance.status = 'closed';
+    await grievance.save();
+    
     res.json({ id, status: 'closed' });
   } catch (error) {
     console.error(error);

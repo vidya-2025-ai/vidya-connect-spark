@@ -1,43 +1,31 @@
 
 const express = require('express');
 const auth = require('../middleware/auth');
+const { Post } = require('../models/Community');
+const User = require('../models/User');
 const router = express.Router();
 
 // Get all community posts
 router.get('/posts', async (req, res) => {
   try {
-    // Fetch community posts logic would go here
-    // For now, returning mock data
-    const posts = [
-      {
-        id: '1',
-        title: 'Tips for successful internship interviews',
-        content: 'Preparing for internship interviews can be challenging...',
-        author: {
-          id: '101',
-          name: 'Anjali Sharma',
-          role: 'student'
-        },
-        likes: 24,
-        comments: 8,
-        createdAt: new Date().toISOString()
+    const posts = await Post.find().sort({ createdAt: -1 });
+    
+    // Format the response
+    const formattedPosts = posts.map(post => ({
+      id: post._id,
+      title: post.title,
+      content: post.content,
+      author: {
+        id: post.author,
+        name: post.authorName,
+        role: post.authorRole
       },
-      {
-        id: '2',
-        title: 'What recruiters look for in an intern',
-        content: 'From my experience hiring interns across various roles...',
-        author: {
-          id: '102',
-          name: 'Raj Patel',
-          role: 'recruiter'
-        },
-        likes: 56,
-        comments: 12,
-        createdAt: new Date(Date.now() - 86400000).toISOString()
-      }
-    ];
-
-    res.json(posts);
+      likes: post.likes.length,
+      comments: post.comments.length,
+      createdAt: post.createdAt
+    }));
+    
+    res.json(formattedPosts);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -53,23 +41,36 @@ router.post('/posts', auth, async (req, res) => {
       return res.status(400).json({ message: 'Title and content are required' });
     }
     
-    // Create post logic would go here
-    // For now, returning mock response
-    const post = {
-      id: Math.random().toString(36).substring(2, 15),
+    // Get user data
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Create post
+    const post = new Post({
       title,
       content,
+      author: req.user.id,
+      authorName: `${user.firstName} ${user.lastName}`,
+      authorRole: user.role
+    });
+    
+    await post.save();
+    
+    res.status(201).json({
+      id: post._id,
+      title: post.title,
+      content: post.content,
       author: {
-        id: req.user.id,
-        name: `${req.user.firstName} ${req.user.lastName}`,
-        role: req.user.role
+        id: post.author,
+        name: post.authorName,
+        role: post.authorRole
       },
       likes: 0,
       comments: 0,
-      createdAt: new Date().toISOString()
-    };
-    
-    res.status(201).json(post);
+      createdAt: post.createdAt
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -81,30 +82,23 @@ router.get('/posts/:postId/comments', async (req, res) => {
   try {
     const { postId } = req.params;
     
-    // Fetch comments logic would go here
-    // For now, returning mock data
-    const comments = [
-      {
-        id: '101',
-        content: 'Great post! This was really helpful.',
-        author: {
-          id: '201',
-          name: 'Priya Singh',
-          role: 'student'
-        },
-        createdAt: new Date().toISOString()
+    // Find post
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+    
+    // Format the response
+    const comments = post.comments.map(comment => ({
+      id: comment._id,
+      content: comment.content,
+      author: {
+        id: comment.author,
+        name: comment.authorName,
+        role: comment.authorRole
       },
-      {
-        id: '102',
-        content: 'I would also add that being proactive is key.',
-        author: {
-          id: '202',
-          name: 'Vikram Mehta',
-          role: 'recruiter'
-        },
-        createdAt: new Date(Date.now() - 3600000).toISOString()
-      }
-    ];
+      createdAt: comment.createdAt
+    }));
     
     res.json(comments);
   } catch (error) {
@@ -123,20 +117,105 @@ router.post('/posts/:postId/comments', auth, async (req, res) => {
       return res.status(400).json({ message: 'Comment content is required' });
     }
     
-    // Add comment logic would go here
-    // For now, returning mock response
+    // Find post
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+    
+    // Get user data
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Create comment
     const comment = {
-      id: Math.random().toString(36).substring(2, 15),
       content,
-      author: {
-        id: req.user.id,
-        name: `${req.user.firstName} ${req.user.lastName}`,
-        role: req.user.role
-      },
-      createdAt: new Date().toISOString()
+      author: req.user.id,
+      authorName: `${user.firstName} ${user.lastName}`,
+      authorRole: user.role,
+      createdAt: new Date()
     };
     
-    res.status(201).json(comment);
+    // Add comment to post
+    post.comments.push(comment);
+    await post.save();
+    
+    // Get the newly added comment
+    const newComment = post.comments[post.comments.length - 1];
+    
+    res.status(201).json({
+      id: newComment._id,
+      content: newComment.content,
+      author: {
+        id: newComment.author,
+        name: newComment.authorName,
+        role: newComment.authorRole
+      },
+      createdAt: newComment.createdAt
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Like a post
+router.post('/posts/:postId/like', auth, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    
+    // Find post
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+    
+    // Check if user already liked the post
+    if (post.likes.includes(req.user.id)) {
+      return res.status(400).json({ message: 'You already liked this post' });
+    }
+    
+    // Add user to likes
+    post.likes.push(req.user.id);
+    await post.save();
+    
+    res.json({
+      id: post._id,
+      likes: post.likes.length
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Unlike a post
+router.post('/posts/:postId/unlike', auth, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    
+    // Find post
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+    
+    // Check if user liked the post
+    const likeIndex = post.likes.indexOf(req.user.id);
+    if (likeIndex === -1) {
+      return res.status(400).json({ message: 'You have not liked this post' });
+    }
+    
+    // Remove user from likes
+    post.likes.splice(likeIndex, 1);
+    await post.save();
+    
+    res.json({
+      id: post._id,
+      likes: post.likes.length
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

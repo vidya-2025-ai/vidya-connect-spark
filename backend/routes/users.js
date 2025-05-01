@@ -1,17 +1,35 @@
 
 const express = require('express');
+const router = express.Router();
 const auth = require('../middleware/auth');
 const User = require('../models/User');
-const router = express.Router();
+const bcrypt = require('bcryptjs');
 
 // Get current user
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
+    
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    res.json(user);
+    
+    res.json({
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      organization: user.organization,
+      jobTitle: user.jobTitle,
+      skills: user.skills,
+      bio: user.bio,
+      avatar: user.avatar,
+      education: user.education,
+      experience: user.experience,
+      socialLinks: user.socialLinks,
+      preferences: user.preferences
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -21,128 +39,181 @@ router.get('/me', auth, async (req, res) => {
 // Update user profile
 router.put('/profile', auth, async (req, res) => {
   try {
-    const { 
-      firstName, 
-      lastName, 
-      bio, 
-      skills, 
+    const {
+      firstName,
+      lastName,
       organization,
       jobTitle,
+      skills,
+      bio,
+      avatar,
       education,
       experience,
       socialLinks
     } = req.body;
     
-    const user = await User.findById(req.user.id);
+    // Build profile object
+    const profileFields = {};
+    
+    if (firstName) profileFields.firstName = firstName;
+    if (lastName) profileFields.lastName = lastName;
+    if (organization) profileFields.organization = organization;
+    if (jobTitle) profileFields.jobTitle = jobTitle;
+    if (skills) profileFields.skills = skills;
+    if (bio) profileFields.bio = bio;
+    if (avatar) profileFields.avatar = avatar;
+    if (education) profileFields.education = education;
+    if (experience) profileFields.experience = experience;
+    if (socialLinks) profileFields.socialLinks = socialLinks;
+    
+    // Update lastActive
+    profileFields.lastActive = Date.now();
+    
+    // Update user
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { $set: profileFields },
+      { new: true }
+    ).select('-password');
+    
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    // Update fields if provided
-    if (firstName) user.firstName = firstName;
-    if (lastName) user.lastName = lastName;
-    if (bio) user.bio = bio;
-    if (skills) user.skills = skills;
-    if (organization) user.organization = organization;
-    if (jobTitle) user.jobTitle = jobTitle;
-    if (education) user.education = education;
-    if (experience) user.experience = experience;
-    if (socialLinks) user.socialLinks = socialLinks;
+    res.json({
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      organization: user.organization,
+      jobTitle: user.jobTitle,
+      skills: user.skills,
+      bio: user.bio,
+      avatar: user.avatar,
+      education: user.education,
+      experience: user.experience,
+      socialLinks: user.socialLinks,
+      preferences: user.preferences
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update user preferences
+router.put('/preferences', auth, async (req, res) => {
+  try {
+    const { preferences } = req.body;
+    
+    if (!preferences) {
+      return res.status(400).json({ message: 'Preferences are required' });
+    }
+    
+    // Update user
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { $set: { preferences } },
+      { new: true }
+    ).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json({
+      preferences: user.preferences
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Change password
+router.put('/password', auth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current and new password are required' });
+    }
+    
+    // Find user
+    const user = await User.findById(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Check current password
+    const isMatch = await user.comparePassword(currentPassword);
+    
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+    
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
     
     await user.save();
     
-    res.json(user);
+    res.json({ message: 'Password updated successfully' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Get user dashboard stats
-router.get('/dashboard-stats', auth, async (req, res) => {
+// Get users for mentorship (for students) or talent search (for recruiters)
+router.get('/search', auth, async (req, res) => {
   try {
-    if (req.user.role === 'student') {
-      // Student dashboard stats
-      const stats = {
-        applicationsSubmitted: 12,
-        interviewsScheduled: 3,
-        offersReceived: 1,
-        certificatesEarned: 4,
-        skillsInProgress: 8,
-        completedChallenges: 5,
-        mentorshipSessions: 3,
-        upcomingEvents: 2
-      };
-      res.json(stats);
-    } else if (req.user.role === 'recruiter') {
-      // Recruiter dashboard stats
-      const stats = {
-        activeOpportunities: 7,
-        totalApplications: 48,
-        shortlistedCandidates: 15,
-        interviewsScheduled: 8,
-        pendingTasks: 4,
-        newApplicants: 12,
-        upcomingInterviews: 3,
-        mentorshipRequests: 5
-      };
-      res.json(stats);
-    } else {
-      res.status(400).json({ message: 'Invalid user role' });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Get user by ID (for public profiles)
-router.get('/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
+    const { role, skills, name } = req.query;
     
-    const user = await User.findById(userId).select('-password -email');
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    // Build query
+    const query = {};
+    
+    // Filter by role if specified
+    if (role) {
+      query.role = role;
     }
     
-    // Return public profile
-    const profile = {
+    // Filter by name if specified
+    if (name) {
+      const nameRegex = new RegExp(name, 'i');
+      query.$or = [
+        { firstName: nameRegex },
+        { lastName: nameRegex }
+      ];
+    }
+    
+    // Filter by skills if specified
+    if (skills) {
+      const skillsArray = skills.split(',').map(skill => skill.trim());
+      query.skills = { $in: skillsArray };
+    }
+    
+    // Find users
+    const users = await User.find(query)
+      .select('-password')
+      .limit(20);
+    
+    // Format the response
+    const formattedUsers = users.map(user => ({
       id: user._id,
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
-      bio: user.bio,
-      skills: user.skills,
       organization: user.organization,
-      jobTitle: user.jobTitle
-    };
+      jobTitle: user.jobTitle,
+      skills: user.skills,
+      bio: user.bio,
+      avatar: user.avatar
+    }));
     
-    res.json(profile);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Search for users
-router.get('/search/:query', auth, async (req, res) => {
-  try {
-    const { query } = req.params;
-    
-    if (!query || query.length < 2) {
-      return res.status(400).json({ message: 'Search query must be at least 2 characters' });
-    }
-    
-    const users = await User.find({
-      $or: [
-        { firstName: { $regex: query, $options: 'i' } },
-        { lastName: { $regex: query, $options: 'i' } },
-        { organization: { $regex: query, $options: 'i' } }
-      ]
-    }).select('firstName lastName role organization jobTitle');
-    
-    res.json(users);
+    res.json(formattedUsers);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
