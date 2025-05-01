@@ -42,7 +42,49 @@ const UserSchema = new mongoose.Schema({
   }],
   bio: String,
   avatar: String,
+  education: [{
+    institution: String,
+    degree: String,
+    field: String,
+    startDate: Date,
+    endDate: Date,
+    current: Boolean,
+    description: String
+  }],
+  experience: [{
+    company: String,
+    position: String,
+    location: String,
+    startDate: Date,
+    endDate: Date,
+    current: Boolean,
+    description: String
+  }],
+  socialLinks: {
+    linkedin: String,
+    github: String,
+    twitter: String,
+    portfolio: String
+  },
+  preferences: {
+    emailNotifications: {
+      type: Boolean,
+      default: true
+    },
+    applicationUpdates: {
+      type: Boolean,
+      default: true
+    },
+    marketingEmails: {
+      type: Boolean,
+      default: false
+    }
+  },
   createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  lastActive: {
     type: Date,
     default: Date.now
   }

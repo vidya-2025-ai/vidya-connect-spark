@@ -13,6 +13,10 @@ const skillRoutes = require('./routes/skills');
 const calendarRoutes = require('./routes/calendar');
 const resumeRoutes = require('./routes/resume');
 const atsRoutes = require('./routes/ats');
+const communityRoutes = require('./routes/community');
+const grievanceRoutes = require('./routes/grievances');
+const challengeRoutes = require('./routes/challenges');
+const microInternshipRoutes = require('./routes/micro-internships');
 
 // Load environment variables
 dotenv.config();
@@ -41,6 +45,10 @@ app.use('/api/skills', skillRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/resume', resumeRoutes);
 app.use('/api/ats', atsRoutes);
+app.use('/api/community', communityRoutes);
+app.use('/api/grievances', grievanceRoutes);
+app.use('/api/challenges', challengeRoutes);
+app.use('/api/micro-internships', microInternshipRoutes);
 
 // Default route
 app.get('/', (req, res) => {
