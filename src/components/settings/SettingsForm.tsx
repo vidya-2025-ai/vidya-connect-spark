@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -79,22 +78,13 @@ export function SettingsForm({ userType }: { userType: "student" | "recruiter" }
     try {
       setIsUpdating(true);
       
-      // Format data for API call - making a copy to avoid modifying the original values
-      let userData: Partial<typeof user> = { ...values };
+      // Create userData as a proper type that matches User shape
+      const userData: Record<string, any> = { ...values };
       
-      // Handle student-specific fields - convert skills string to array BEFORE sending to API
+      // Handle student-specific fields - convert skills string to array for API
       if (userType === "student" && "skills" in values && values.skills) {
-        // Need to create a new object to avoid typescript errors
-        userData = {
-          ...userData,
-          // Override the skills string with an array
-          skills: values.skills.split(",").map(skill => skill.trim()).filter(Boolean)
-        };
-        
-        // Delete the string version of skills to avoid type conflicts
-        if (typeof userData.skills === "string") {
-          delete userData.skills;
-        }
+        // Convert string to array and remove the original string property
+        userData.skills = values.skills.split(",").map(skill => skill.trim()).filter(Boolean);
       }
       
       // Update profile
