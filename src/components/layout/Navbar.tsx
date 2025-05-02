@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X, User, LogOut } from 'lucide-react';
@@ -11,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -27,6 +26,28 @@ const Navbar = () => {
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
+  const getUserInitials = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`;
+    } else if (user?.firstName) {
+      return getInitials(user.firstName);
+    }
+    return 'U';
+  };
+
+  const getAvatarUrl = () => {
+    // If user has avatar and it's a valid URL or path
+    if (user?.avatar) {
+      // If it's an absolute URL, return it as is
+      if (user.avatar.startsWith('http') || user.avatar.startsWith('data:')) {
+        return user.avatar;
+      }
+      // Otherwise, it's a relative path on the server
+      return `http://localhost:5000${user.avatar}`;
+    }
+    return null;
   };
 
   return (
@@ -78,9 +99,10 @@ const Navbar = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarFallback>{user.firstName && user.lastName ? 
-                          `${user.firstName[0]}${user.lastName[0]}` : 
-                          getInitials(user.firstName || "User")}</AvatarFallback>
+                        {getAvatarUrl() && (
+                          <AvatarImage src={getAvatarUrl() || ''} alt={`${user.firstName} ${user.lastName}`} />
+                        )}
+                        <AvatarFallback>{getUserInitials()}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
@@ -159,6 +181,18 @@ const Navbar = () => {
             </>
           ) : (
             <>
+              <div className="flex items-center px-3 py-2">
+                <Avatar className="h-10 w-10 mr-3">
+                  {getAvatarUrl() && (
+                    <AvatarImage src={getAvatarUrl() || ''} alt={`${user.firstName} ${user.lastName}`} />
+                  )}
+                  <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="text-base font-medium text-gray-800">{user.firstName} {user.lastName}</div>
+                  <div className="text-sm text-gray-500">{user.email}</div>
+                </div>
+              </div>
               <Link
                 to={user.role === 'student' ? '/student/dashboard' : '/recruiter/dashboard'}
                 className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-[#007bff] hover:bg-gray-50"

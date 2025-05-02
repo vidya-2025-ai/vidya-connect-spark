@@ -37,6 +37,11 @@ export const opportunityService = {
   updateOpportunity: async (id: string, opportunityData: any): Promise<Opportunity> => {
     const response = await api.put<Opportunity>(`/opportunities/${id}`, opportunityData);
     return response.data;
+  },
+  
+  applyToOpportunity: async (opportunityId: string, applicationData: any): Promise<any> => {
+    const response = await api.post(`/applications/opportunity/${opportunityId}`, applicationData);
+    return response.data;
   }
 };
 

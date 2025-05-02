@@ -1,183 +1,159 @@
 
-import { useState, useEffect, createContext, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../services/api';
-import { useToast } from '../hooks/use-toast';
+import { authService } from '@/services/api/authService';
+import { User } from '@/services/api/types';
+import { useToast } from '@/components/ui/use-toast';
 
-export type UserRole = 'student' | 'recruiter';
-
-interface User {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: UserRole;
-  organization?: string;
-  jobTitle?: string;
-  skills?: string[];
-  bio?: string;
-  avatar?: string;
-}
-
-interface AuthData {
-  token: string;
-  user: User;
-}
-
-export interface RegisterData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  role: UserRole;
-  organization?: string;
-  jobTitle?: string;
-}
-
-// Define the type for our context
-type AuthContextType = {
+interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<User | null>;
-  register: (userData: RegisterData) => Promise<User | null>;
+  error: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  register: (userData: any) => Promise<void>;
   logout: () => void;
-};
+  updateUser: (userData: Partial<User>) => void;
+}
 
-// Create the context with a default value matching the expected type
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: false,
-  login: async () => null,
-  register: async () => null,
+  error: null,
+  login: async () => {},
+  register: async () => {},
   logout: () => {},
+  updateUser: () => {},
 });
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Check if user is logged in
   useEffect(() => {
-    const checkLoggedIn = async () => {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchUser = async () => {
       try {
-        const token = localStorage.getItem('token');
-        
-        if (token) {
-          const userData = await authService.getCurrentUser();
-          setUser(userData);
-        }
+        const userData = await authService.getCurrentUser();
+        setUser(userData);
       } catch (error) {
-        console.error('Auth check error:', error);
+        console.error('Error fetching user data:', error);
         localStorage.removeItem('token');
+        setError('Session expired. Please login again.');
+        toast({
+          title: "Session Expired",
+          description: "Please login again to continue.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     };
-    
-    checkLoggedIn();
-  }, []);
 
-  // Login function
-  const login = async (email: string, password: string): Promise<User | null> => {
+    fetchUser();
+  }, [toast]);
+
+  const login = async (email: string, password: string) => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      const response = await authService.login(email, password);
+      const { token, user } = await authService.login(email, password);
       
-      localStorage.setItem('token', response.token);
-      setUser(response.user);
+      localStorage.setItem('token', token);
+      setUser(user);
       
-      // Redirect based on role
-      redirectBasedOnRole(response.user.role);
+      // Redirect based on user role
+      navigate(user.role === 'student' ? '/student/dashboard' : '/recruiter/dashboard');
       
       toast({
         title: "Login Successful",
-        description: `Welcome back, ${response.user.firstName}!`,
+        description: `Welcome back, ${user.firstName}!`,
       });
-      
-      return response.user;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Login error:', error);
+      let errorMsg = 'Failed to login. Please check your credentials and try again.';
+      
+      if (error.response && error.response.data && error.response.data.message) {
+        errorMsg = error.response.data.message;
+      }
+      
+      setError(errorMsg);
       toast({
         title: "Login Failed",
-        description: error.response?.data?.message || "Invalid credentials. Please try again.",
+        description: errorMsg,
         variant: "destructive",
       });
-      throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  // Register function
-  const register = async (userData: RegisterData): Promise<User | null> => {
+  const register = async (userData: any) => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      const response = await authService.register(userData);
+      const { token, user } = await authService.register(userData);
       
-      localStorage.setItem('token', response.token);
-      setUser(response.user);
+      localStorage.setItem('token', token);
+      setUser(user);
       
-      // Redirect based on role
-      redirectBasedOnRole(response.user.role);
+      // Redirect based on user role
+      navigate(user.role === 'student' ? '/student/dashboard' : '/recruiter/dashboard');
       
       toast({
         title: "Registration Successful",
-        description: `Welcome to InternMatch, ${response.user.firstName}!`,
+        description: `Welcome to Vidya-Samveda, ${user.firstName}!`,
       });
+    } catch (error) {
+      console.error('Registration error:', error);
+      let errorMsg = 'Failed to register. Please try again.';
       
-      return response.user;
-    } catch (error: any) {
-      console.error('Register error:', error);
+      if (error.response && error.response.data && error.response.data.message) {
+        errorMsg = error.response.data.message;
+      }
+      
+      setError(errorMsg);
       toast({
         title: "Registration Failed",
-        description: error.response?.data?.message || "Could not create account. Please try again.",
+        description: errorMsg,
         variant: "destructive",
       });
-      throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  // Logout function
-  const logout = async () => {
-    try {
-      // Call the logout API for tracking
-      await authService.logout();
-    } catch (error) {
-      console.error('Logout API error:', error);
-    } finally {
-      // Always clear local storage even if API fails
-      localStorage.removeItem('token');
-      setUser(null);
-      navigate('/login');
-      toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
-      });
-    }
+  const logout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+    navigate('/');
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+    });
   };
 
-  const redirectBasedOnRole = (role: UserRole) => {
-    if (role === 'student') {
-      navigate('/student/dashboard');
-    } else if (role === 'recruiter') {
-      navigate('/recruiter/dashboard');
+  const updateUser = (userData: Partial<User>) => {
+    if (user) {
+      setUser({ ...user, ...userData });
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, error, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Custom hook to use auth context
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
-
-export default useAuth;
+export const useAuth = () => useContext(AuthContext);

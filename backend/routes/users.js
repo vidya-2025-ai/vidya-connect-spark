@@ -4,6 +4,44 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, '../uploads/avatars');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `avatar-${req.user.id}-${uniqueSuffix}${ext}`);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  // Accept only image files
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed!'), false);
+  }
+};
+
+const upload = multer({ 
+  storage, 
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB max file size
+  }
+});
 
 // Get current user
 router.get('/me', auth, async (req, res) => {
@@ -30,6 +68,34 @@ router.get('/me', auth, async (req, res) => {
       socialLinks: user.socialLinks,
       preferences: user.preferences
     });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Upload profile photo
+router.post('/profile/photo', auth, upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    // Get the relative path to serve the image
+    const relativePath = `/uploads/avatars/${req.file.filename}`;
+    
+    // Update the user's avatar field
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { avatar: relativePath },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ avatar: relativePath });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

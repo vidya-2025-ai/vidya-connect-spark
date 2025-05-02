@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import StudentSidebar from '@/components/dashboard/StudentSidebar';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
-import { Search, BookOpen, MapPin, Calendar, Briefcase, Sliders, GraduationCap, Star } from 'lucide-react';
+import { Search, BookOpen, MapPin, Calendar, Briefcase, Sliders, GraduationCap, Star, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { 
   Select,
@@ -17,99 +17,52 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-
-const opportunities = [
-  {
-    id: 1,
-    title: "Summer Research Internship",
-    organization: "Tech Research Labs",
-    type: "Research",
-    duration: "3 months",
-    deadline: "2025-05-15",
-    description: "Join our cutting-edge research program in artificial intelligence and machine learning.",
-    location: "Remote",
-    stipend: "₹25,000/month",
-    skillMatch: 92,
-    skills: ["Python", "Machine Learning", "Data Analysis", "Research"]
-  },
-  {
-    id: 2,
-    title: "Teaching Assistant Program",
-    organization: "Global Education Institute",
-    type: "Teaching",
-    duration: "6 months",
-    deadline: "2025-06-01",
-    description: "Help shape the future of education by assisting in undergraduate computer science courses.",
-    location: "Hybrid",
-    stipend: "₹20,000/month",
-    skillMatch: 85,
-    skills: ["Communication", "Computer Science", "Teaching", "Mentoring"]
-  },
-  {
-    id: 3,
-    title: "Social Impact Fellowship",
-    organization: "Community First",
-    type: "Fellowship",
-    duration: "12 months",
-    deadline: "2025-05-30",
-    description: "Work on projects that make a real difference in local communities.",
-    location: "On-site",
-    stipend: "₹30,000/month",
-    skillMatch: 78,
-    skills: ["Project Management", "Social Work", "Communication", "Leadership"]
-  },
-  {
-    id: 4,
-    title: "Frontend Developer Internship",
-    organization: "WebTech Solutions",
-    type: "Technical",
-    duration: "4 months",
-    deadline: "2025-05-25",
-    description: "Work on real-world projects using React, TypeScript and modern frontend technologies.",
-    location: "Remote",
-    stipend: "₹35,000/month",
-    skillMatch: 96,
-    skills: ["React", "TypeScript", "CSS", "UI/UX"]
-  },
-  {
-    id: 5,
-    title: "Product Management Micro-Internship",
-    organization: "StartupHub",
-    type: "Micro-Internship",
-    duration: "2 weeks",
-    deadline: "2025-05-10",
-    description: "Short-term project to develop product roadmap for an early-stage startup.",
-    location: "Remote",
-    stipend: "₹15,000 (total)",
-    skillMatch: 88,
-    skills: ["Product Strategy", "Market Research", "User Experience", "Analytics"]
-  },
-  {
-    id: 6,
-    title: "Data Science Challenge",
-    organization: "AnalyticsPro",
-    type: "Challenge",
-    duration: "3 weeks",
-    deadline: "2025-05-20",
-    description: "Participate in our data challenge to solve real business problems using data analysis.",
-    location: "Remote",
-    stipend: "₹20,000 (prize)",
-    skillMatch: 94,
-    skills: ["Python", "Data Science", "Statistics", "Data Visualization"]
-  }
-];
+import { opportunityService } from '@/services/api/opportunityService';
+import { useToast } from '@/components/ui/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 const ExploreOpportunities = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
-  const [filteredOpportunities, setFilteredOpportunities] = useState(opportunities);
-  
-  // Filter states
+  const [opportunities, setOpportunities] = useState([]);
+  const [filteredOpportunities, setFilteredOpportunities] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [selectedLocations, setSelectedLocations] = useState([]);
   const [minStipend, setMinStipend] = useState(0);
   const [showSkillBasedMatching, setShowSkillBasedMatching] = useState(true);
   const [selectedDuration, setSelectedDuration] = useState("");
+  const [applyingToOpportunity, setApplyingToOpportunity] = useState(null);
+  const [coverLetter, setCoverLetter] = useState('');
+  const [isApplying, setIsApplying] = useState(false);
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    fetchOpportunities();
+  }, []);
+
+  const fetchOpportunities = async () => {
+    try {
+      setIsLoading(true);
+      const response = await opportunityService.getAllOpportunities();
+      setOpportunities(response);
+      setFilteredOpportunities(response);
+    } catch (error) {
+      console.error('Error fetching opportunities:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load opportunities. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const handleSearch = () => {
     let results = opportunities;
@@ -117,14 +70,64 @@ const ExploreOpportunities = () => {
     if (searchTerm) {
       results = results.filter(opp => 
         opp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        opp.organization.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        opp.organization.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         opp.description.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
     setFilteredOpportunities(results);
   };
+
+  const handleApply = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please login to apply for this opportunity.",
+        variant: "default"
+      });
+      navigate('/login');
+      return;
+    }
+
+    if (!applyingToOpportunity) return;
+
+    try {
+      setIsApplying(true);
+      await opportunityService.applyToOpportunity(applyingToOpportunity._id, {
+        coverLetter
+      });
+      
+      toast({
+        title: "Application Submitted",
+        description: "Your application was submitted successfully!",
+        variant: "default"
+      });
+      
+      setApplyingToOpportunity(null);
+      setCoverLetter('');
+    } catch (error) {
+      console.error('Error applying to opportunity:', error);
+      toast({
+        title: "Application Failed",
+        description: "Failed to submit application. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsApplying(false);
+    }
+  };
   
+  const calculateSkillMatch = (opportunitySkills) => {
+    if (!user || !user.skills || !opportunitySkills) return 0;
+    
+    const userSkills = user.skills.map(skill => skill.toLowerCase());
+    const matchedSkills = opportunitySkills
+      .filter(skill => userSkills.includes(skill.toLowerCase()))
+      .length;
+    
+    return Math.round((matchedSkills / opportunitySkills.length) * 100) || 0;
+  };
+
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
       <StudentSidebar />
@@ -255,72 +258,123 @@ const ExploreOpportunities = () => {
               </Card>
             )}
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredOpportunities.map((opportunity) => (
-                <Card key={opportunity.id} className="flex flex-col hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-lg font-semibold">{opportunity.title}</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{opportunity.organization}</p>
-                      </div>
-                      {showSkillBasedMatching && (
-                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 flex items-center">
-                          <Star className="h-3 w-3 mr-1" fill="currentColor" />
-                          {opportunity.skillMatch}% Match
-                        </Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-1">
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-700 dark:text-gray-300">{opportunity.description}</p>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        <Badge variant="secondary" className="text-xs">
-                          {opportunity.type}
-                        </Badge>
-                        {opportunity.skills.slice(0, 3).map((skill, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {skill}
-                          </Badge>
-                        ))}
-                        {opportunity.skills.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{opportunity.skills.length - 3}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 mt-4">
-                      <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        {opportunity.location}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        {opportunity.duration}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                        <Briefcase className="h-4 w-4 mr-1" />
-                        {opportunity.stipend}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                        <GraduationCap className="h-4 w-4 mr-1" />
-                        Mentorship
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between items-center">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Deadline: {new Date(opportunity.deadline).toLocaleDateString()}
-                    </p>
-                    <Button size="sm">Apply Now</Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
+            {isLoading ? (
+              <div className="flex justify-center items-center py-16">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <span className="ml-2 text-lg text-gray-600">Loading opportunities...</span>
+              </div>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {filteredOpportunities.map((opportunity) => {
+                  const skillMatch = calculateSkillMatch(opportunity.skillsRequired);
+                  
+                  return (
+                    <Card key={opportunity._id} className="flex flex-col hover:shadow-lg transition-shadow">
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="text-lg font-semibold">{opportunity.title}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {opportunity.organization.firstName} {opportunity.organization.lastName} ({opportunity.organization.organization})
+                            </p>
+                          </div>
+                          {showSkillBasedMatching && (
+                            <Badge className={`flex items-center ${
+                              skillMatch > 80 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
+                              skillMatch > 50 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' :
+                              'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                            }`}>
+                              <Star className="h-3 w-3 mr-1" fill="currentColor" />
+                              {skillMatch}% Match
+                            </Badge>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent className="flex-1">
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-700 dark:text-gray-300">{opportunity.description}</p>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <Badge variant="secondary" className="text-xs">
+                              {opportunity.type}
+                            </Badge>
+                            {opportunity.skillsRequired?.slice(0, 3).map((skill, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {skill}
+                              </Badge>
+                            ))}
+                            {opportunity.skillsRequired && opportunity.skillsRequired.length > 3 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{opportunity.skillsRequired.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mt-4">
+                          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                            <MapPin className="h-4 w-4 mr-1" />
+                            {opportunity.location || 'Remote'}
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                            <Calendar className="h-4 w-4 mr-1" />
+                            {opportunity.duration}
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                            <Briefcase className="h-4 w-4 mr-1" />
+                            {opportunity.stipend?.amount ? `₹${opportunity.stipend.amount}/${opportunity.stipend.currency}` : 'Unpaid'}
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                            <GraduationCap className="h-4 w-4 mr-1" />
+                            Mentorship
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter className="flex justify-between items-center">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Deadline: {opportunity.deadline ? new Date(opportunity.deadline).toLocaleDateString() : 'Open'}
+                        </p>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button size="sm" onClick={() => setApplyingToOpportunity(opportunity)}>Apply Now</Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[525px]">
+                            <DialogHeader>
+                              <DialogTitle>Apply for {applyingToOpportunity?.title}</DialogTitle>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                              <div className="grid gap-2">
+                                <Label htmlFor="cover-letter">Cover Letter</Label>
+                                <Textarea
+                                  id="cover-letter"
+                                  placeholder="Why are you interested in this opportunity? What makes you a good fit?"
+                                  value={coverLetter}
+                                  onChange={(e) => setCoverLetter(e.target.value)}
+                                  rows={6}
+                                />
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <Button variant="outline" onClick={() => {
+                                setApplyingToOpportunity(null);
+                                setCoverLetter('');
+                              }}>Cancel</Button>
+                              <Button 
+                                onClick={handleApply}
+                                disabled={isApplying}
+                              >
+                                {isApplying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Submit Application
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
             
-            {filteredOpportunities.length === 0 && (
+            {!isLoading && filteredOpportunities.length === 0 && (
               <div className="text-center py-12">
                 <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">No results found</h3>
@@ -330,9 +384,11 @@ const ExploreOpportunities = () => {
               </div>
             )}
             
-            <div className="mt-6 flex justify-center">
-              <Button variant="outline">Load More Opportunities</Button>
-            </div>
+            {!isLoading && filteredOpportunities.length > 0 && (
+              <div className="mt-6 flex justify-center">
+                <Button variant="outline">Load More Opportunities</Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
