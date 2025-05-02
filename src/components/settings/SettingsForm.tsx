@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { userService } from "@/services/api/userService";
 
+// Define separate schemas for students and recruiters
 const studentFormSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters."),
   lastName: z.string().min(2, "Last name must be at least 2 characters."),
@@ -37,6 +38,11 @@ const recruiterFormSchema = z.object({
   bio: z.string().optional(),
 });
 
+// Type for form values based on user type
+type StudentFormValues = z.infer<typeof studentFormSchema>;
+type RecruiterFormValues = z.infer<typeof recruiterFormSchema>;
+type FormValues = StudentFormValues | RecruiterFormValues;
+
 export function SettingsForm({ userType }: { userType: "student" | "recruiter" }) {
   const { user, updateUser } = useAuth();
   const { toast } = useToast();
@@ -48,35 +54,36 @@ export function SettingsForm({ userType }: { userType: "student" | "recruiter" }
   // Determine the form schema based on user type
   const formSchema = userType === "student" ? studentFormSchema : recruiterFormSchema;
   
-  // Create form
-  const form = useForm<z.infer<typeof formSchema>>({
+  // Create form with proper default values based on user type
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    defaultValues: userType === "student" ? {
       firstName: user?.firstName || "",
       lastName: user?.lastName || "",
       email: user?.email || "",
       bio: user?.bio || "",
-      ...(userType === "student" ? { 
-        skills: user?.skills?.join(", ") || "" 
-      } : {
-        organization: user?.organization || "",
-        jobTitle: user?.jobTitle || ""
-      }),
+      skills: user?.skills ? user.skills.join(", ") : "",
+    } : {
+      firstName: user?.firstName || "",
+      lastName: user?.lastName || "",
+      email: user?.email || "",
+      organization: user?.organization || "",
+      jobTitle: user?.jobTitle || "",
+      bio: user?.bio || "",
     },
   });
 
   // Handle form submission
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: FormValues) => {
     try {
       setIsUpdating(true);
       
-      // Format skills as an array if student
-      let userData = { ...values };
-      if (userType === "student" && values.skills) {
-        userData = {
-          ...values,
-          skills: values.skills.split(",").map(skill => skill.trim())
-        };
+      // Format data for API call
+      let userData: Partial<typeof user> = { ...values };
+      
+      // Handle student-specific fields
+      if (userType === "student" && "skills" in values && values.skills) {
+        userData.skills = values.skills.split(",").map(skill => skill.trim());
       }
       
       // Update profile
