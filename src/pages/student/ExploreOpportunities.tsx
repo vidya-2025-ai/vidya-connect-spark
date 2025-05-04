@@ -26,7 +26,7 @@ const ExploreOpportunities = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedType, setSelectedType] = useState<string>('');
+  const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const { toast } = useToast();
 
@@ -44,7 +44,7 @@ const ExploreOpportunities = () => {
         // Build filter object
         const filters: Record<string, any> = {};
         if (searchTerm) filters.search = searchTerm;
-        if (selectedType) filters.type = selectedType;
+        if (selectedType && selectedType !== 'all') filters.type = selectedType;
         if (selectedSkills.length > 0) filters.skills = selectedSkills;
         
         const data = await opportunityService.getAllOpportunities(filters);
@@ -113,7 +113,7 @@ const ExploreOpportunities = () => {
                     <SelectValue placeholder="Opportunity Type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="Internship">Internship</SelectItem>
                     <SelectItem value="Research">Research</SelectItem>
                     <SelectItem value="Volunteer">Volunteer</SelectItem>

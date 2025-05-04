@@ -175,7 +175,7 @@ const Applications = () => {
                             <SelectValue placeholder="Select position" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All positions</SelectItem>
+                            <SelectItem value="all_positions">All positions</SelectItem>
                             <SelectItem value="engineer">Software Engineer</SelectItem>
                             <SelectItem value="pm">Product Manager</SelectItem>
                             <SelectItem value="designer">UI/UX Designer</SelectItem>
@@ -191,7 +191,7 @@ const Applications = () => {
                             <SelectValue placeholder="Select range" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All ranges</SelectItem>
+                            <SelectItem value="all_ranges">All ranges</SelectItem>
                             <SelectItem value="high">90-100%</SelectItem>
                             <SelectItem value="medium">80-89%</SelectItem>
                             <SelectItem value="low">Below 80%</SelectItem>
@@ -205,7 +205,7 @@ const Applications = () => {
                             <SelectValue placeholder="Select timeframe" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All time</SelectItem>
+                            <SelectItem value="all_time">All time</SelectItem>
                             <SelectItem value="today">Today</SelectItem>
                             <SelectItem value="week">This week</SelectItem>
                             <SelectItem value="month">This month</SelectItem>

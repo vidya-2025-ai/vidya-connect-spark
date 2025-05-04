@@ -166,7 +166,7 @@ const ATSCalculator = () => {
                       </SelectTrigger>
                       <SelectContent>
                         {resumes.length === 0 ? (
-                          <SelectItem value="none" disabled>No resumes available</SelectItem>
+                          <SelectItem value="no_resumes" disabled>No resumes available</SelectItem>
                         ) : (
                           resumes.map((resume) => (
                             <SelectItem key={resume._id} value={resume._id}>
@@ -189,7 +189,7 @@ const ATSCalculator = () => {
                       </SelectTrigger>
                       <SelectContent>
                         {parameters.length === 0 ? (
-                          <SelectItem value="none" disabled>No criteria available</SelectItem>
+                          <SelectItem value="no_criteria" disabled>No criteria available</SelectItem>
                         ) : (
                           parameters.map((param) => (
                             <SelectItem key={param._id} value={param._id}>
