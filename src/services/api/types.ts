@@ -156,6 +156,7 @@ export interface ResumeContent {
     email: string;
     phone?: string;
     address?: string;
+    linkedin?: string;
     website?: string;
   };
   education: Education[];
