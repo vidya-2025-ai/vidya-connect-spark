@@ -1,4 +1,3 @@
-
 import api from './index';
 import { Opportunity, PaginatedResponse, ApplicationStats } from './types';
 
@@ -20,14 +19,14 @@ export interface OpportunityWithStats extends Opportunity {
 }
 
 export const opportunityService = {
-  getAllOpportunities: async (filters: OpportunityFilters = {}): Promise<PaginatedResponse<Opportunity>> => {
+  getAllOpportunities: async (filters: OpportunityFilters = {}): Promise<Opportunity[]> => {
     const response = await api.get<PaginatedResponse<Opportunity>>('/opportunities', { 
       params: {
         ...filters,
         skills: filters.skills ? filters.skills.join(',') : undefined
       }
     });
-    return response.data;
+    return response.data.opportunities || [];
   },
   
   getRecruiterOpportunities: async (filters: { status?: string, sortBy?: string, sortOrder?: 'asc' | 'desc' } = {}): Promise<OpportunityWithStats[]> => {
@@ -54,7 +53,7 @@ export const opportunityService = {
     const response = await api.post(`/applications/opportunity/${opportunityId}`, applicationData);
     return response.data;
   },
-
+  
   getRecommendedOpportunities: async (): Promise<Opportunity[]> => {
     const response = await api.get<Opportunity[]>('/opportunities/recommendations');
     return response.data;

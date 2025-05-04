@@ -1,4 +1,3 @@
-
 import api from './index';
 import { Application, PaginatedResponse } from './types';
 
@@ -12,25 +11,25 @@ export interface ApplicationFilters {
 }
 
 export const applicationService = {
-  getStudentApplications: async (filters: ApplicationFilters = {}): Promise<PaginatedResponse<Application>> => {
+  getStudentApplications: async (filters: ApplicationFilters = {}): Promise<Application[]> => {
     const response = await api.get<PaginatedResponse<Application>>('/applications', { params: filters });
-    return response.data;
+    return response.data.applications || [];
   },
   
-  getRecruiterApplications: async (filters: ApplicationFilters = {}): Promise<PaginatedResponse<Application>> => {
+  getRecruiterApplications: async (filters: ApplicationFilters = {}): Promise<Application[]> => {
     const response = await api.get<PaginatedResponse<Application>>('/applications/recruiter', { params: filters });
-    return response.data;
+    return response.data.applications || [];
   },
   
   getOpportunityApplications: async (
     opportunityId: string, 
     filters: ApplicationFilters = {}
-  ): Promise<PaginatedResponse<Application>> => {
+  ): Promise<Application[]> => {
     const response = await api.get<PaginatedResponse<Application>>(
       `/applications/opportunity/${opportunityId}`, 
       { params: filters }
     );
-    return response.data;
+    return response.data.applications || [];
   },
   
   createApplication: async (opportunityId: string, applicationData: any): Promise<Application> => {
