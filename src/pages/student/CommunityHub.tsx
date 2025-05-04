@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StudentSidebar from '@/components/dashboard/StudentSidebar';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +13,22 @@ import { communityService } from '@/services/api/communityService';
 import { CommunityPost, PostComment } from '@/services/api/types';
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from '@/components/ui/use-toast';
+
+// Helper function to safely access author name
+const getAuthorName = (author: any): string => {
+  if (typeof author === 'string') return 'Unknown';
+  return author?.name || 'Unknown';
+};
+
+// Helper function to safely format dates
+const formatDate = (dateString: string | Date): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
 
 const CommunityHub = () => {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
@@ -112,7 +127,7 @@ const CommunityHub = () => {
     }
 
     try {
-      const comment = await communityService.addComment(activePost.id, { 
+      const comment = await communityService.addComment(activePost._id, { 
         content: newComment 
       });
       
@@ -121,10 +136,12 @@ const CommunityHub = () => {
       
       // Update post comment count in the posts list
       const updatedPosts = posts.map(post => {
-        if (post.id === activePost.id) {
+        if (post._id === activePost._id) {
           return {
             ...post,
-            comments: post.comments + 1
+            comments: typeof post.comments === 'number' 
+              ? post.comments + 1 
+              : (Array.isArray(post.comments) ? post.comments.length + 1 : 1)
           };
         }
         return post;
@@ -134,7 +151,9 @@ const CommunityHub = () => {
       // Update active post comment count
       setActivePost({
         ...activePost,
-        comments: activePost.comments + 1
+        comments: typeof activePost.comments === 'number'
+          ? activePost.comments + 1
+          : (Array.isArray(activePost.comments) ? activePost.comments.length + 1 : 1)
       });
       
     } catch (error) {
@@ -153,7 +172,7 @@ const CommunityHub = () => {
       
       // Update posts with new like count
       const updatedPosts = posts.map(post => {
-        if (post.id === postId) {
+        if (post._id === postId) {
           return {
             ...post,
             likes: response.likes
@@ -164,7 +183,7 @@ const CommunityHub = () => {
       setPosts(updatedPosts);
       
       // Update active post if it's the one being liked
-      if (activePost && activePost.id === postId) {
+      if (activePost && activePost._id === postId) {
         setActivePost({
           ...activePost,
           likes: response.likes
@@ -180,18 +199,9 @@ const CommunityHub = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
   const openPostDetails = (post: CommunityPost) => {
     setActivePost(post);
-    fetchComments(post.id);
+    fetchComments(post._id);
   };
 
   if (isLoading) {
@@ -330,7 +340,7 @@ const CommunityHub = () => {
                     </Card>
                   ) : (
                     posts.map((post) => (
-                      <Card key={post.id} className="hover:shadow-lg transition-shadow">
+                      <Card key={post._id} className="hover:shadow-lg transition-shadow">
                         <CardHeader 
                           className="cursor-pointer" 
                           onClick={() => openPostDetails(post)}
@@ -338,10 +348,10 @@ const CommunityHub = () => {
                           <CardTitle className="text-lg">{post.title}</CardTitle>
                           <div className="flex items-center space-x-2">
                             <Avatar className="h-8 w-8">
-                              <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+                              <AvatarFallback>{getAuthorName(post.author).charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="text-sm font-medium">{post.author.name}</p>
+                              <p className="text-sm font-medium">{getAuthorName(post.author)}</p>
                               <p className="text-xs text-gray-500">{formatDate(post.createdAt)}</p>
                             </div>
                           </div>
@@ -358,7 +368,7 @@ const CommunityHub = () => {
                               variant="ghost" 
                               size="sm"
                               className="flex items-center space-x-1"
-                              onClick={() => handleLikePost(post.id)}
+                              onClick={() => handleLikePost(post._id)}
                             >
                               <Heart className="h-4 w-4" />
                               <span>{post.likes}</span>
@@ -370,7 +380,11 @@ const CommunityHub = () => {
                               onClick={() => openPostDetails(post)}
                             >
                               <MessageSquare className="h-4 w-4" />
-                              <span>{post.comments}</span>
+                              <span>
+                                {typeof post.comments === 'number' 
+                                  ? post.comments
+                                  : (Array.isArray(post.comments) ? post.comments.length : 0)}
+                              </span>
                             </Button>
                           </div>
                         </CardFooter>
@@ -384,7 +398,7 @@ const CommunityHub = () => {
                     .sort((a, b) => b.likes - a.likes)
                     .slice(0, 5)
                     .map((post) => (
-                      <Card key={post.id} className="hover:shadow-lg transition-shadow">
+                      <Card key={post._id} className="hover:shadow-lg transition-shadow">
                         <CardHeader 
                           className="cursor-pointer" 
                           onClick={() => openPostDetails(post)}
@@ -392,10 +406,10 @@ const CommunityHub = () => {
                           <CardTitle className="text-lg">{post.title}</CardTitle>
                           <div className="flex items-center space-x-2">
                             <Avatar className="h-8 w-8">
-                              <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+                              <AvatarFallback>{getAuthorName(post.author).charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="text-sm font-medium">{post.author.name}</p>
+                              <p className="text-sm font-medium">{getAuthorName(post.author)}</p>
                               <p className="text-xs text-gray-500">{formatDate(post.createdAt)}</p>
                             </div>
                           </div>
@@ -412,7 +426,7 @@ const CommunityHub = () => {
                               variant="ghost" 
                               size="sm"
                               className="flex items-center space-x-1"
-                              onClick={() => handleLikePost(post.id)}
+                              onClick={() => handleLikePost(post._id)}
                             >
                               <Heart className="h-4 w-4" />
                               <span>{post.likes}</span>
@@ -424,7 +438,11 @@ const CommunityHub = () => {
                               onClick={() => openPostDetails(post)}
                             >
                               <MessageSquare className="h-4 w-4" />
-                              <span>{post.comments}</span>
+                              <span>
+                                {typeof post.comments === 'number' 
+                                  ? post.comments
+                                  : (Array.isArray(post.comments) ? post.comments.length : 0)}
+                              </span>
                             </Button>
                           </div>
                         </CardFooter>
@@ -437,7 +455,7 @@ const CommunityHub = () => {
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                     .slice(0, 5)
                     .map((post) => (
-                      <Card key={post.id} className="hover:shadow-lg transition-shadow">
+                      <Card key={post._id} className="hover:shadow-lg transition-shadow">
                         <CardHeader 
                           className="cursor-pointer" 
                           onClick={() => openPostDetails(post)}
@@ -445,10 +463,10 @@ const CommunityHub = () => {
                           <CardTitle className="text-lg">{post.title}</CardTitle>
                           <div className="flex items-center space-x-2">
                             <Avatar className="h-8 w-8">
-                              <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+                              <AvatarFallback>{getAuthorName(post.author).charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="text-sm font-medium">{post.author.name}</p>
+                              <p className="text-sm font-medium">{getAuthorName(post.author)}</p>
                               <p className="text-xs text-gray-500">{formatDate(post.createdAt)}</p>
                             </div>
                           </div>
@@ -465,7 +483,7 @@ const CommunityHub = () => {
                               variant="ghost" 
                               size="sm"
                               className="flex items-center space-x-1"
-                              onClick={() => handleLikePost(post.id)}
+                              onClick={() => handleLikePost(post._id)}
                             >
                               <Heart className="h-4 w-4" />
                               <span>{post.likes}</span>
@@ -477,7 +495,11 @@ const CommunityHub = () => {
                               onClick={() => openPostDetails(post)}
                             >
                               <MessageSquare className="h-4 w-4" />
-                              <span>{post.comments}</span>
+                              <span>
+                                {typeof post.comments === 'number' 
+                                  ? post.comments
+                                  : (Array.isArray(post.comments) ? post.comments.length : 0)}
+                              </span>
                             </Button>
                           </div>
                         </CardFooter>
@@ -516,15 +538,17 @@ const CommunityHub = () => {
                         </div>
                       ) : (
                         comments.map((comment) => (
-                          <div key={comment.id} className="flex space-x-3">
+                          <div key={comment._id} className="flex space-x-3">
                             <Avatar>
-                              <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
+                              <AvatarFallback>{getAuthorName(comment.author).charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div>
                               <div className="flex items-center space-x-2">
-                                <p className="font-medium text-sm">{comment.author.name}</p>
+                                <p className="font-medium text-sm">{getAuthorName(comment.author)}</p>
                                 <Badge variant="outline" className="text-xs">
-                                  {comment.author.role}
+                                  {typeof comment.author === 'object' && comment.author !== null 
+                                    ? comment.author.role 
+                                    : 'user'}
                                 </Badge>
                                 <span className="text-xs text-gray-500">
                                   {formatDate(comment.createdAt)}

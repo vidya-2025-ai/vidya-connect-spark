@@ -238,46 +238,58 @@ export interface MentorshipRequest {
 // Community Types
 export interface CommunityPost {
   _id: string;
-  author: string | User;
+  author: {
+    id: string;
+    name: string;
+    role: string;
+  };
   title: string;
   content: string;
-  tags?: string[];
   likes: number;
-  likedBy: string[];
-  comments: string[] | PostComment[];
+  comments: number | string[] | PostComment[];
   createdAt: string | Date;
-  updatedAt: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface PostComment {
   _id: string;
-  author: string | User;
-  post: string | CommunityPost;
+  author: {
+    id: string;
+    name: string;
+    role: string;
+  };
   content: string;
-  likes: number;
-  likedBy: string[];
   createdAt: string | Date;
-  updatedAt: string | Date;
 }
 
 // Grievance Types
 export interface Grievance {
   _id: string;
-  student: string | User;
+  createdBy: {
+    id: string;
+    name: string;
+    role: string;
+  };
   title: string;
   description: string;
-  status: 'open' | 'under-review' | 'resolved' | 'closed';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  category: string;
+  status: "open" | "under-review" | "resolved" | "closed";
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  category?: string;
   responses: GrievanceResponse[];
   createdAt: string | Date;
-  updatedAt: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface GrievanceResponse {
-  responder: string | User;
+  _id: string;
+  responder: {
+    id: string;
+    name: string;
+    role: string;
+  } | string | User;
+  responderRole?: string;
   content: string;
-  date: string | Date;
+  createdAt: string | Date;
 }
 
 // Challenge Types

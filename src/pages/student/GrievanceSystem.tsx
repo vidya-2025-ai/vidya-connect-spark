@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StudentSidebar from '@/components/dashboard/StudentSidebar';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +15,24 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from '@/components/ui/use-toast';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+// Helper function to safely format dates
+const formatDate = (dateString: string | Date): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+// Helper function to safely get name from user or string
+const getName = (user: any): string => {
+  if (typeof user === 'string') return 'Unknown';
+  return user?.name || 'Unknown';
+};
+
 const GrievanceSystem = () => {
   const [grievances, setGrievances] = useState<Grievance[]>([]);
   const [selectedGrievance, setSelectedGrievance] = useState<Grievance | null>(null);
@@ -31,7 +48,13 @@ const GrievanceSystem = () => {
       try {
         setIsLoading(true);
         const data = await grievanceService.getGrievances();
-        setGrievances(data);
+        // Ensure we have the correct TypeScript typing
+        const formattedData = data.map(grievance => ({
+          ...grievance,
+          // Ensure status is of the correct type
+          status: grievance.status as "open" | "under-review" | "resolved" | "closed"
+        }));
+        setGrievances(formattedData);
       } catch (error) {
         console.error('Error fetching grievances:', error);
         toast({
@@ -64,7 +87,14 @@ const GrievanceSystem = () => {
         description: newGrievanceDescription
       });
 
-      setGrievances([grievance, ...grievances]);
+      // Ensure we have the correct TypeScript typing
+      const formattedGrievance = {
+        ...grievance,
+        // Ensure status is of the correct type
+        status: grievance.status as "open" | "under-review" | "resolved" | "closed"
+      };
+
+      setGrievances([formattedGrievance, ...grievances]);
       setCreateDialogOpen(false);
       setNewGrievanceTitle('');
       setNewGrievanceDescription('');
@@ -98,7 +128,7 @@ const GrievanceSystem = () => {
     try {
       setIsSubmitting(true);
       const response = await grievanceService.respondToGrievance(
-        selectedGrievance.id, 
+        selectedGrievance._id, 
         { content: responseContent }
       );
 
@@ -111,7 +141,7 @@ const GrievanceSystem = () => {
 
       // Update the grievance in the list
       const updatedGrievances = grievances.map(g => {
-        if (g.id === selectedGrievance.id) {
+        if (g._id === selectedGrievance._id) {
           return updatedGrievance;
         }
         return g;
@@ -142,16 +172,16 @@ const GrievanceSystem = () => {
       
       // Update the grievance status in the list
       const updatedGrievances = grievances.map(g => {
-        if (g.id === grievanceId) {
-          return { ...g, status: 'closed' };
+        if (g._id === grievanceId) {
+          return { ...g, status: 'closed' as "closed" };
         }
         return g;
       });
       setGrievances(updatedGrievances);
       
       // Update selected grievance if it's the one being closed
-      if (selectedGrievance && selectedGrievance.id === grievanceId) {
-        setSelectedGrievance({ ...selectedGrievance, status: 'closed' });
+      if (selectedGrievance && selectedGrievance._id === grievanceId) {
+        setSelectedGrievance({ ...selectedGrievance, status: 'closed' as "closed" });
       }
       
       toast({
@@ -166,17 +196,6 @@ const GrievanceSystem = () => {
         variant: "destructive"
       });
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -345,9 +364,9 @@ const GrievanceSystem = () => {
                   ) : (
                     grievances.map((grievance) => (
                       <Card 
-                        key={grievance.id} 
+                        key={grievance._id} 
                         className={`hover:shadow-lg transition-shadow ${
-                          selectedGrievance?.id === grievance.id ? 'ring-2 ring-primary' : ''
+                          selectedGrievance?._id === grievance._id ? 'ring-2 ring-primary' : ''
                         }`}
                       >
                         <CardHeader className="pb-2">
@@ -395,9 +414,9 @@ const GrievanceSystem = () => {
                       .filter(g => g.status.toLowerCase() !== 'resolved' && g.status.toLowerCase() !== 'closed')
                       .map((grievance) => (
                         <Card 
-                          key={grievance.id} 
+                          key={grievance._id} 
                           className={`hover:shadow-lg transition-shadow ${
-                            selectedGrievance?.id === grievance.id ? 'ring-2 ring-primary' : ''
+                            selectedGrievance?._id === grievance._id ? 'ring-2 ring-primary' : ''
                           }`}
                         >
                           <CardHeader className="pb-2">
@@ -441,9 +460,9 @@ const GrievanceSystem = () => {
                       .filter(g => g.status.toLowerCase() === 'resolved' || g.status.toLowerCase() === 'closed')
                       .map((grievance) => (
                         <Card 
-                          key={grievance.id} 
+                          key={grievance._id} 
                           className={`hover:shadow-lg transition-shadow ${
-                            selectedGrievance?.id === grievance.id ? 'ring-2 ring-primary' : ''
+                            selectedGrievance?._id === grievance._id ? 'ring-2 ring-primary' : ''
                           }`}
                         >
                           <CardHeader className="pb-2">
@@ -492,7 +511,7 @@ const GrievanceSystem = () => {
                       <p className="text-gray-600">{selectedGrievance.description}</p>
                       <div className="flex justify-end mt-2">
                         <span className="text-sm text-gray-500">
-                          - {selectedGrievance.createdBy.name} ({selectedGrievance.createdBy.role})
+                          - {getName(selectedGrievance.createdBy)} ({typeof selectedGrievance.createdBy === 'object' && selectedGrievance.createdBy !== null ? selectedGrievance.createdBy.role : 'student'})
                         </span>
                       </div>
                     </div>
@@ -512,15 +531,15 @@ const GrievanceSystem = () => {
                         <p className="text-gray-500 text-center py-4">No responses yet</p>
                       ) : (
                         selectedGrievance.responses.map((response) => (
-                          <div key={response.id} className="flex space-x-3">
+                          <div key={response._id} className="flex space-x-3">
                             <Avatar>
-                              <AvatarFallback>{response.responder.name.charAt(0)}</AvatarFallback>
+                              <AvatarFallback>{getName(response.responder).charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div>
                               <div className="flex items-center space-x-2">
-                                <p className="font-medium text-sm">{response.responder.name}</p>
+                                <p className="font-medium text-sm">{getName(response.responder)}</p>
                                 <Badge variant="outline" className="text-xs">
-                                  {response.responder.role}
+                                  {typeof response.responder === 'object' && response.responder !== null ? response.responder.role : response.responderRole}
                                 </Badge>
                                 <span className="text-xs text-gray-500">
                                   {formatDate(response.createdAt)}
@@ -550,7 +569,7 @@ const GrievanceSystem = () => {
                             <div className="flex justify-between mt-2">
                               <Button 
                                 variant="secondary" 
-                                onClick={() => handleCloseGrievance(selectedGrievance.id)}
+                                onClick={() => handleCloseGrievance(selectedGrievance._id)}
                               >
                                 Close Grievance
                               </Button>
