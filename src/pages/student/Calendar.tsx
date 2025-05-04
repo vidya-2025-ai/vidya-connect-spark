@@ -1,45 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import StudentSidebar from '@/components/dashboard/StudentSidebar';
-import { Card, CardContent } from "@/components/ui/card";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
-import { Clock, CalendarIcon } from "lucide-react";
 import { calendarService } from '@/services/api/calendarService';
 import { Event } from '@/services/api/types';
-import { Skeleton } from "@/components/ui/skeleton";
+import { format } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
 
-const getEventColorByType = (type: string) => {
-  switch(type) {
-    case 'Interview':
-      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-    case 'Deadline':
-      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-    case 'Event':
-      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-    case 'Meeting':
-      return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300";
-    default:
-      return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
-  }
-};
-
-const CalendarPage = () => {
-  const [date, setDate] = useState<Date | undefined>(new Date());
+const Calendar = () => {
+  const [date, setDate] = useState<Date>(new Date());
   const [events, setEvents] = useState<Event[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  const formattedDate = date ? date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : '';
-
-  // Filter events for selected date
-  const selectedDateEvents = events.filter(event => {
-    const eventDate = new Date(event.date);
-    return date && 
-      eventDate.getDate() === date.getDate() &&
-      eventDate.getMonth() === date.getMonth() &&
-      eventDate.getFullYear() === date.getFullYear();
-  });
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -48,11 +22,11 @@ const CalendarPage = () => {
         const data = await calendarService.getAllEvents();
         setEvents(data);
       } catch (error) {
-        console.error('Error fetching events:', error);
+        console.error('Failed to fetch events:', error);
         toast({
           title: "Error",
-          description: "Failed to load calendar events. Please try again later.",
-          variant: "destructive"
+          description: "Failed to load calendar events",
+          variant: "destructive",
         });
       } finally {
         setIsLoading(false);
@@ -62,35 +36,66 @@ const CalendarPage = () => {
     fetchEvents();
   }, []);
 
+  // Filter events for the selected date
+  const selectedDateEvents = events.filter((event) => {
+    const eventDate = new Date(event.startDate);
+    return eventDate.getDate() === date.getDate() &&
+      eventDate.getMonth() === date.getMonth() &&
+      eventDate.getFullYear() === date.getFullYear();
+  });
+
+  // Get event dots for the calendar
+  const getEventDotsForDate = (date: Date) => {
+    return events.filter((event) => {
+      const eventDate = new Date(event.startDate);
+      return eventDate.getDate() === date.getDate() &&
+        eventDate.getMonth() === date.getMonth() &&
+        eventDate.getFullYear() === date.getFullYear();
+    });
+  };
+
+  const getEventTypeColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'interview':
+        return 'bg-blue-500';
+      case 'deadline':
+        return 'bg-red-500';
+      case 'reminder':
+        return 'bg-amber-500';
+      default:
+        return 'bg-green-500';
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
+      <div className="h-screen flex overflow-hidden bg-gray-50">
         <StudentSidebar />
-        <div className="flex-1 overflow-auto">
-          <div className="py-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-              <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Calendar</h1>
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                  Manage your schedule and upcoming events
-                </p>
-              </div>
-
-              <div className="grid gap-6 md:grid-cols-3">
-                <Card className="md:col-span-2 border border-gray-200 dark:border-gray-700 shadow-sm">
-                  <CardContent className="p-4">
-                    <Skeleton className="h-72 w-full" />
+        <div className="flex-1 overflow-auto p-8">
+          <div className="max-w-7xl mx-auto">
+            <h1 className="text-2xl font-bold mb-8">Calendar</h1>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="md:col-span-2">
+                <Card>
+                  <CardContent className="p-6">
+                    <Skeleton className="h-96 w-full" />
                   </CardContent>
                 </Card>
-
-                <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
-                  <CardContent className="p-4">
-                    <Skeleton className="h-6 w-3/4 mb-4" />
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="mb-4">
-                        <Skeleton className="h-20 w-full rounded-lg" />
-                      </div>
-                    ))}
+              </div>
+              <div>
+                <Card>
+                  <CardHeader>
+                    <Skeleton className="h-8 w-48" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="space-y-2">
+                          <Skeleton className="h-6 w-3/4" />
+                          <Skeleton className="h-4 w-1/2" />
+                        </div>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -102,65 +107,80 @@ const CalendarPage = () => {
   }
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
+    <div className="h-screen flex overflow-hidden bg-gray-50">
       <StudentSidebar />
-      <div className="flex-1 overflow-auto">
-        <div className="py-6">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Calendar</h1>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                Manage your schedule and upcoming events
-              </p>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-3">
-              <Card className="md:col-span-2 border border-gray-200 dark:border-gray-700 shadow-sm">
-                <CardContent className="p-4">
+      <div className="flex-1 overflow-auto p-8">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-2xl font-bold mb-8">Calendar</h1>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="md:col-span-2">
+              <Card>
+                <CardContent className="p-6">
                   <CalendarComponent
                     mode="single"
                     selected={date}
-                    onSelect={setDate}
-                    className="rounded-md border-none"
+                    onSelect={(newDate) => newDate && setDate(newDate)}
+                    className="rounded-md border"
+                    modifiers={{
+                      event: (date) => getEventDotsForDate(date).length > 0,
+                    }}
+                    modifiersStyles={{
+                      event: {
+                        fontWeight: 'bold',
+                      }
+                    }}
+                    components={{
+                      DayContent: (props) => {
+                        const eventsForDay = getEventDotsForDate(props.date);
+                        return (
+                          <div className="relative w-full h-full flex items-center justify-center">
+                            {props.date.getDate()}
+                            {eventsForDay.length > 0 && (
+                              <div className="absolute bottom-1 flex gap-1 justify-center">
+                                {eventsForDay.slice(0, 3).map((event, i) => (
+                                  <span 
+                                    key={i} 
+                                    className={`inline-block w-1 h-1 rounded-full ${getEventTypeColor(event.type)}`}
+                                  ></span>
+                                ))}
+                                {eventsForDay.length > 3 && (
+                                  <span className="inline-block w-1 h-1 rounded-full bg-gray-400"></span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+                    }}
                   />
                 </CardContent>
               </Card>
-
-              <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
-                <CardContent className="p-4">
-                  <h3 className="font-medium text-lg mb-4">{formattedDate}</h3>
+            </div>
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Events for {format(date, 'MMMM d, yyyy')}</CardTitle>
+                </CardHeader>
+                <CardContent>
                   {selectedDateEvents.length === 0 ? (
-                    <div className="text-center py-8">
-                      <CalendarIcon className="h-12 w-12 mx-auto text-gray-400" />
-                      <p className="mt-2 text-gray-500">No events scheduled for this date</p>
-                    </div>
+                    <p className="text-gray-500">No events for this date</p>
                   ) : (
                     <div className="space-y-4">
                       {selectedDateEvents.map((event) => (
-                        <div 
-                          key={event._id}
-                          className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-sm transition-shadow"
-                        >
-                          <div className="flex justify-between items-start">
-                            <p className="font-medium">{event.title}</p>
-                            <Badge className={getEventColorByType(event.type)}>
-                              {event.type}
+                        <div key={event._id} className="border-l-4 pl-4 py-2" style={{ borderColor: getEventTypeColor(event.type).replace('bg-', 'rgb(var(--') + '))' }}>
+                          <h3 className="font-medium">{event.title}</h3>
+                          <p className="text-sm text-gray-600">
+                            {format(new Date(event.startDate), 'h:mm a')}
+                            {event.endDate && ` - ${format(new Date(event.endDate), 'h:mm a')}`}
+                          </p>
+                          {event.location && (
+                            <p className="text-xs text-gray-500">{event.location}</p>
+                          )}
+                          <div className="mt-1">
+                            <Badge className={getEventTypeColor(event.type).replace('bg-', 'bg-') + ' text-white'}>
+                              {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
                             </Badge>
                           </div>
-                          <div className="flex items-center mt-2 text-sm text-gray-600 dark:text-gray-400">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {event.time || 'All day'}
-                          </div>
-                          {event.description && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                              {event.description}
-                            </p>
-                          )}
-                          {event.location && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                              Location: {event.location}
-                            </p>
-                          )}
                         </div>
                       ))}
                     </div>
@@ -175,4 +195,4 @@ const CalendarPage = () => {
   );
 };
 
-export default CalendarPage;
+export default Calendar;

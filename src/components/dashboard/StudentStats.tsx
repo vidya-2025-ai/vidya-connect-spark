@@ -1,10 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Briefcase, CheckCircle, Clock, Award } from 'lucide-react';
 import { applicationService } from '@/services/api/applicationService';
 import { certificateService } from '@/services/api/certificateService';
-import { Application, Certificate } from '@/services/api/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const StudentStats = () => {
@@ -59,6 +57,28 @@ const StudentStats = () => {
     fetchStats();
   }, []);
 
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i} className="vs-card">
+            <CardContent className="p-4">
+              <div className="flex items-center">
+                <div className="p-2 rounded-full bg-gray-100 mr-3">
+                  <Skeleton className="h-5 w-5" />
+                </div>
+                <div>
+                  <Skeleton className="h-6 w-8 mb-1" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
   const statsConfig = [
     {
       name: 'Applications',
@@ -85,28 +105,6 @@ const StudentStats = () => {
       iconColor: 'bg-vs-purple-100 text-vs-purple-600'
     }
   ];
-
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="vs-card">
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <div className="p-2 rounded-full bg-gray-100 mr-3">
-                  <Skeleton className="h-5 w-5" />
-                </div>
-                <div>
-                  <Skeleton className="h-6 w-8 mb-1" />
-                  <Skeleton className="h-4 w-16" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

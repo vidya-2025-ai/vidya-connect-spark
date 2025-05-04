@@ -1,343 +1,574 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import StudentSidebar from '@/components/dashboard/StudentSidebar';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
-import { Heart, MessageSquare, Clock, Users } from 'lucide-react';
-
-const communityPosts = [
-  {
-    id: 1,
-    author: "Neha Gupta",
-    role: "Product Design Intern",
-    avatar: "https://randomuser.me/api/portraits/women/23.jpg",
-    content: "Just completed my first month at my UX design internship! Here are 5 key learnings that helped me make an impact from day one...",
-    image: "https://images.unsplash.com/photo-1603401546565-e33d336f8e2a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MzV8fGRlc2lnbnxlbnwwfHwwfHw%3D&auto=format&fit=crop&w=800&q=60",
-    likes: 24,
-    comments: 8,
-    time: "2 hours ago",
-    tags: ["design", "internship", "uxdesign"]
-  },
-  {
-    id: 2,
-    author: "Arjun Sharma",
-    role: "Software Developer Intern",
-    avatar: "https://randomuser.me/api/portraits/men/41.jpg",
-    content: "I've been struggling with imposter syndrome during my internship. Any advice on how to overcome this feeling and gain more confidence?",
-    image: "",
-    likes: 32,
-    comments: 15,
-    time: "8 hours ago",
-    tags: ["mentalhealth", "impostersyndrome", "techinternship"]
-  },
-  {
-    id: 3,
-    author: "Priya Mehta",
-    role: "Marketing Intern",
-    avatar: "https://randomuser.me/api/portraits/women/63.jpg",
-    content: "Just finished my internship at a major FMCG company. Here's my detailed experience and tips for anyone looking to break into marketing...",
-    image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTB8fG1hcmtldGluZ3xlbnwwfHwwfHw%3D&auto=format&fit=crop&w=800&q=60",
-    likes: 45,
-    comments: 12,
-    time: "1 day ago",
-    tags: ["marketing", "internshipdiaries", "careeradvice"]
-  }
-];
-
-const upcomingEvents = [
-  {
-    id: 1,
-    title: "Resume Review Workshop",
-    date: "2025-05-05T16:00:00",
-    attendees: 42,
-    type: "Workshop",
-    description: "Get personalized feedback on your resume from industry professionals."
-  },
-  {
-    id: 2,
-    title: "Interview Preparation AMA",
-    date: "2025-05-08T18:00:00",
-    attendees: 87,
-    type: "AMA",
-    description: "Ask Me Anything session with recruiters from top tech companies."
-  },
-  {
-    id: 3,
-    title: "Networking for Introverts",
-    date: "2025-05-12T17:30:00",
-    attendees: 35,
-    type: "Workshop",
-    description: "Learn effective networking strategies designed specifically for introverts."
-  }
-];
-
-const languageOptions = [
-  { value: "en", label: "English" },
-  { value: "hi", label: "हिन्दी (Hindi)" },
-  { value: "ta", label: "தமிழ் (Tamil)" },
-  { value: "te", label: "తెలుగు (Telugu)" },
-  { value: "mr", label: "मराठी (Marathi)" },
-  { value: "bn", label: "বাংলা (Bengali)" },
-];
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Heart, MessageSquare, Send } from "lucide-react";
+import { communityService } from '@/services/api/communityService';
+import { CommunityPost, PostComment } from '@/services/api/types';
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from '@/components/ui/use-toast';
 
 const CommunityHub = () => {
-  return (
-    <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
-      <StudentSidebar />
-      <div className="flex-1 overflow-auto">
-        <div className="py-6">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-              <div>
-                <div className="flex items-center">
-                  <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Community Hub</h1>
-                  <select className="ml-3 bg-transparent border-none text-sm font-medium text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-0">
-                    {languageOptions.map(option => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                  Connect with peers, share experiences, and learn together
-                </p>
-              </div>
-              <div className="mt-4 md:mt-0">
-                <Button>Create Post</Button>
-              </div>
-            </div>
+  const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [activePost, setActivePost] = useState<CommunityPost | null>(null);
+  const [comments, setComments] = useState<PostComment[]>([]);
+  const [newPostTitle, setNewPostTitle] = useState('');
+  const [newPostContent, setNewPostContent] = useState('');
+  const [newComment, setNewComment] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [createPostDialogOpen, setCreatePostDialogOpen] = useState(false);
 
-            <div className="mt-6 grid gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-2">
-                <Card className="mb-6">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start space-x-3">
-                      <Avatar>
-                        <AvatarFallback>AM</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <Input 
-                          placeholder="Share your internship experience or ask a question..." 
-                          className="bg-gray-100 dark:bg-gray-800 border-0"
-                        />
-                        <div className="flex justify-between mt-3">
-                          <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                              Photo
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-                              </svg>
-                              Video
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                              </svg>
-                              Link
-                            </Button>
-                          </div>
-                          <Button>Post</Button>
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        setIsLoading(true);
+        const data = await communityService.getPosts();
+        setPosts(data);
+      } catch (error) {
+        console.error('Error fetching community posts:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load community posts. Please try again later.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, []);
+
+  const fetchComments = async (postId: string) => {
+    if (!postId) return;
+    
+    try {
+      setCommentsLoading(true);
+      const data = await communityService.getPostComments(postId);
+      setComments(data);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load comments. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  const handleCreatePost = async () => {
+    if (!newPostTitle.trim() || !newPostContent.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide both a title and content for your post.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const newPost = await communityService.createPost({
+        title: newPostTitle,
+        content: newPostContent
+      });
+      
+      setPosts([newPost, ...posts]);
+      setCreatePostDialogOpen(false);
+      setNewPostTitle('');
+      setNewPostContent('');
+      
+      toast({
+        title: "Success",
+        description: "Your post has been published!"
+      });
+    } catch (error) {
+      console.error('Error creating post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to publish your post. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!activePost || !newComment.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a comment.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const comment = await communityService.addComment(activePost.id, { 
+        content: newComment 
+      });
+      
+      setComments([...comments, comment]);
+      setNewComment('');
+      
+      // Update post comment count in the posts list
+      const updatedPosts = posts.map(post => {
+        if (post.id === activePost.id) {
+          return {
+            ...post,
+            comments: post.comments + 1
+          };
+        }
+        return post;
+      });
+      setPosts(updatedPosts);
+      
+      // Update active post comment count
+      setActivePost({
+        ...activePost,
+        comments: activePost.comments + 1
+      });
+      
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to post your comment. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleLikePost = async (postId: string) => {
+    try {
+      const response = await communityService.likePost(postId);
+      
+      // Update posts with new like count
+      const updatedPosts = posts.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            likes: response.likes
+          };
+        }
+        return post;
+      });
+      setPosts(updatedPosts);
+      
+      // Update active post if it's the one being liked
+      if (activePost && activePost.id === postId) {
+        setActivePost({
+          ...activePost,
+          likes: response.likes
+        });
+      }
+    } catch (error) {
+      console.error('Error liking post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to like post. You may have already liked it.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const openPostDetails = (post: CommunityPost) => {
+    setActivePost(post);
+    fetchComments(post.id);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="h-screen flex overflow-hidden bg-gray-50">
+        <StudentSidebar />
+        <div className="flex-1 overflow-auto p-6">
+          <div className="max-w-5xl mx-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-2xl font-semibold text-gray-900">Community Hub</h1>
+              <Skeleton className="h-10 w-32" />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+              <div className="md:col-span-3 space-y-6">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <Skeleton className="h-6 w-3/4 mb-2" />
+                      <div className="flex items-center space-x-2">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <div>
+                          <Skeleton className="h-4 w-24 mb-1" />
+                          <Skeleton className="h-3 w-16" />
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <div className="space-y-6">
-                  {communityPosts.map(post => (
-                    <Card key={post.id}>
-                      <CardHeader className="pb-3">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center space-x-3">
-                            <Avatar>
-                              <AvatarImage src={post.avatar} alt={post.author} />
-                              <AvatarFallback>{post.author.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <CardTitle className="text-base">{post.author}</CardTitle>
-                              <CardDescription>{post.role}</CardDescription>
-                            </div>
-                          </div>
-                          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                            <Clock className="h-4 w-4 mr-1" />
-                            {post.time}
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <p className="text-gray-700 dark:text-gray-300">
-                          {post.content}
-                        </p>
-                        {post.image && (
-                          <div className="mt-3 rounded-lg overflow-hidden">
-                            <img 
-                              src={post.image} 
-                              alt="Post attachment" 
-                              className="w-full h-auto object-cover"
-                            />
-                          </div>
-                        )}
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {post.tags.map((tag, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">#{tag}</Badge>
-                          ))}
-                        </div>
-                      </CardContent>
-                      <CardFooter className="border-t pt-3">
-                        <div className="flex justify-between w-full">
-                          <Button variant="ghost" size="sm" className="flex items-center">
-                            <Heart className="h-4 w-4 mr-1" />
-                            {post.likes}
-                          </Button>
-                          <Button variant="ghost" size="sm" className="flex items-center">
-                            <MessageSquare className="h-4 w-4 mr-1" />
-                            {post.comments}
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            Share
-                          </Button>
-                        </div>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
+                    </CardHeader>
+                    <CardContent>
+                      <Skeleton className="h-4 w-full mb-2" />
+                      <Skeleton className="h-4 w-5/6 mb-2" />
+                      <Skeleton className="h-4 w-4/6" />
+                    </CardContent>
+                    <CardFooter>
+                      <div className="w-full flex justify-between">
+                        <Skeleton className="h-8 w-16" />
+                        <Skeleton className="h-8 w-16" />
+                      </div>
+                    </CardFooter>
+                  </Card>
+                ))}
               </div>
-
-              <div className="space-y-6">
+              
+              <div className="md:col-span-2">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Users className="mr-2 h-5 w-5" />
-                      Upcoming Community Events
-                    </CardTitle>
+                    <Skeleton className="h-6 w-3/4" />
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {upcomingEvents.map(event => (
-                        <div key={event.id} className="border rounded-lg p-3">
-                          <div className="flex justify-between items-start">
-                            <h3 className="font-medium">{event.title}</h3>
-                            <Badge variant="outline">{event.type}</Badge>
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="flex items-center space-x-2">
+                          <Skeleton className="h-8 w-8 rounded-full" />
+                          <div className="w-full">
+                            <Skeleton className="h-4 w-24 mb-1" />
+                            <Skeleton className="h-3 w-full" />
                           </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            {event.description}
-                          </p>
-                          <div className="flex justify-between items-center mt-3 text-sm">
-                            <div className="flex items-center">
-                              <Clock className="h-4 w-4 mr-1 text-gray-500 dark:text-gray-400" />
-                              <span className="text-gray-600 dark:text-gray-400">
-                                {new Date(event.date).toLocaleDateString()} at {new Date(event.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                              </span>
-                            </div>
-                            <div className="flex items-center">
-                              <Users className="h-4 w-4 mr-1 text-gray-500 dark:text-gray-400" />
-                              <span className="text-gray-600 dark:text-gray-400">{event.attendees}</span>
-                            </div>
-                          </div>
-                          <Button className="w-full mt-2" size="sm">RSVP</Button>
                         </div>
                       ))}
                     </div>
                   </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Digital Badges</CardTitle>
-                    <CardDescription>Earned through your contributions and achievements</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="flex flex-col items-center">
-                        <div className="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mb-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600 dark:text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <span className="text-xs text-center">Profile Complete</span>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center mb-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600 dark:text-green-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                        <span className="text-xs text-center">First Skill Test</span>
-                      </div>
-                      <div className="flex flex-col items-center opacity-40">
-                        <div className="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-                          </svg>
-                        </div>
-                        <span className="text-xs text-center">Mentor Contributor</span>
-                      </div>
-                      <div className="flex flex-col items-center opacity-40">
-                        <div className="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                          </svg>
-                        </div>
-                        <span className="text-xs text-center">Active Commenter</span>
-                      </div>
-                      <div className="flex flex-col items-center opacity-40">
-                        <div className="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-                          </svg>
-                        </div>
-                        <span className="text-xs text-center">Resume Reviewer</span>
-                      </div>
-                      <div className="flex flex-col items-center opacity-40">
-                        <div className="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                          </svg>
-                        </div>
-                        <span className="text-xs text-center">Community Leader</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Language Preference</CardTitle>
-                    <CardDescription>Select your preferred language for content</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {languageOptions.map(option => (
-                        <div key={option.value} className="flex items-center">
-                          <input
-                            type="radio"
-                            id={option.value}
-                            name="language"
-                            value={option.value}
-                            defaultChecked={option.value === "en"}
-                            className="h-4 w-4 text-blue-600"
-                          />
-                          <label htmlFor={option.value} className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                            {option.label}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button variant="outline" className="w-full">Apply Language Preference</Button>
-                  </CardFooter>
                 </Card>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen flex overflow-hidden bg-gray-50">
+      <StudentSidebar />
+      <div className="flex-1 overflow-auto p-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-semibold text-gray-900">Community Hub</h1>
+            <Dialog open={createPostDialogOpen} onOpenChange={setCreatePostDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>Create Post</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Post</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 mt-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Post Title
+                    </label>
+                    <Input 
+                      placeholder="Enter a title for your post"
+                      value={newPostTitle}
+                      onChange={(e) => setNewPostTitle(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Content
+                    </label>
+                    <Textarea 
+                      placeholder="What's on your mind?"
+                      value={newPostContent}
+                      onChange={(e) => setNewPostContent(e.target.value)}
+                      className="min-h-[120px]"
+                    />
+                  </div>
+                  <Button 
+                    className="w-full"
+                    onClick={handleCreatePost}
+                  >
+                    Publish Post
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+            <div className="md:col-span-3 space-y-6">
+              <Tabs defaultValue="all">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="all">All Posts</TabsTrigger>
+                  <TabsTrigger value="popular">Popular</TabsTrigger>
+                  <TabsTrigger value="recent">Recent</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="all" className="space-y-6">
+                  {posts.length === 0 ? (
+                    <Card>
+                      <CardContent className="flex flex-col items-center justify-center text-center p-6">
+                        <MessageSquare className="h-16 w-16 text-gray-400 mb-4" />
+                        <h3 className="text-lg font-medium mb-2">No posts yet</h3>
+                        <p className="text-gray-500 mb-4">Be the first to start a conversation</p>
+                        <Button onClick={() => setCreatePostDialogOpen(true)}>Create Post</Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    posts.map((post) => (
+                      <Card key={post.id} className="hover:shadow-lg transition-shadow">
+                        <CardHeader 
+                          className="cursor-pointer" 
+                          onClick={() => openPostDetails(post)}
+                        >
+                          <CardTitle className="text-lg">{post.title}</CardTitle>
+                          <div className="flex items-center space-x-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-sm font-medium">{post.author.name}</p>
+                              <p className="text-xs text-gray-500">{formatDate(post.createdAt)}</p>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent 
+                          className="cursor-pointer" 
+                          onClick={() => openPostDetails(post)}
+                        >
+                          <p className="text-gray-600">{post.content}</p>
+                        </CardContent>
+                        <CardFooter>
+                          <div className="w-full flex justify-between">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="flex items-center space-x-1"
+                              onClick={() => handleLikePost(post.id)}
+                            >
+                              <Heart className="h-4 w-4" />
+                              <span>{post.likes}</span>
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="flex items-center space-x-1"
+                              onClick={() => openPostDetails(post)}
+                            >
+                              <MessageSquare className="h-4 w-4" />
+                              <span>{post.comments}</span>
+                            </Button>
+                          </div>
+                        </CardFooter>
+                      </Card>
+                    ))
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="popular" className="space-y-6">
+                  {posts
+                    .sort((a, b) => b.likes - a.likes)
+                    .slice(0, 5)
+                    .map((post) => (
+                      <Card key={post.id} className="hover:shadow-lg transition-shadow">
+                        <CardHeader 
+                          className="cursor-pointer" 
+                          onClick={() => openPostDetails(post)}
+                        >
+                          <CardTitle className="text-lg">{post.title}</CardTitle>
+                          <div className="flex items-center space-x-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-sm font-medium">{post.author.name}</p>
+                              <p className="text-xs text-gray-500">{formatDate(post.createdAt)}</p>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent 
+                          className="cursor-pointer" 
+                          onClick={() => openPostDetails(post)}
+                        >
+                          <p className="text-gray-600">{post.content}</p>
+                        </CardContent>
+                        <CardFooter>
+                          <div className="w-full flex justify-between">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="flex items-center space-x-1"
+                              onClick={() => handleLikePost(post.id)}
+                            >
+                              <Heart className="h-4 w-4" />
+                              <span>{post.likes}</span>
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="flex items-center space-x-1"
+                              onClick={() => openPostDetails(post)}
+                            >
+                              <MessageSquare className="h-4 w-4" />
+                              <span>{post.comments}</span>
+                            </Button>
+                          </div>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                </TabsContent>
+                
+                <TabsContent value="recent" className="space-y-6">
+                  {posts
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                    .slice(0, 5)
+                    .map((post) => (
+                      <Card key={post.id} className="hover:shadow-lg transition-shadow">
+                        <CardHeader 
+                          className="cursor-pointer" 
+                          onClick={() => openPostDetails(post)}
+                        >
+                          <CardTitle className="text-lg">{post.title}</CardTitle>
+                          <div className="flex items-center space-x-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-sm font-medium">{post.author.name}</p>
+                              <p className="text-xs text-gray-500">{formatDate(post.createdAt)}</p>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent 
+                          className="cursor-pointer" 
+                          onClick={() => openPostDetails(post)}
+                        >
+                          <p className="text-gray-600">{post.content}</p>
+                        </CardContent>
+                        <CardFooter>
+                          <div className="w-full flex justify-between">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="flex items-center space-x-1"
+                              onClick={() => handleLikePost(post.id)}
+                            >
+                              <Heart className="h-4 w-4" />
+                              <span>{post.likes}</span>
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="flex items-center space-x-1"
+                              onClick={() => openPostDetails(post)}
+                            >
+                              <MessageSquare className="h-4 w-4" />
+                              <span>{post.comments}</span>
+                            </Button>
+                          </div>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                </TabsContent>
+              </Tabs>
+            </div>
+
+            <div className="md:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    {activePost ? 'Comments' : 'Community Discussion'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="max-h-[600px] overflow-y-auto">
+                  {activePost ? (
+                    <div className="space-y-4">
+                      {commentsLoading ? (
+                        <>
+                          {[1, 2, 3].map((i) => (
+                            <div key={i} className="flex space-x-3">
+                              <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+                              <div className="w-full">
+                                <Skeleton className="h-4 w-32 mb-1" />
+                                <Skeleton className="h-3 w-full" />
+                                <Skeleton className="h-3 w-5/6 mt-1" />
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      ) : comments.length === 0 ? (
+                        <div className="text-center py-6 text-gray-500">
+                          No comments yet. Be the first to comment!
+                        </div>
+                      ) : (
+                        comments.map((comment) => (
+                          <div key={comment.id} className="flex space-x-3">
+                            <Avatar>
+                              <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="flex items-center space-x-2">
+                                <p className="font-medium text-sm">{comment.author.name}</p>
+                                <Badge variant="outline" className="text-xs">
+                                  {comment.author.role}
+                                </Badge>
+                                <span className="text-xs text-gray-500">
+                                  {formatDate(comment.createdAt)}
+                                </span>
+                              </div>
+                              <p className="text-gray-600 mt-1">{comment.content}</p>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                      
+                      <div className="mt-6 pt-4 border-t">
+                        <div className="flex space-x-3">
+                          <Avatar>
+                            <AvatarFallback>M</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <Textarea
+                              placeholder="Add a comment..."
+                              value={newComment}
+                              onChange={(e) => setNewComment(e.target.value)}
+                              rows={2}
+                            />
+                            <Button 
+                              className="mt-2" 
+                              size="sm"
+                              onClick={handleAddComment}
+                            >
+                              <Send className="h-4 w-4 mr-2" />
+                              Post
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <p className="text-center text-gray-500">
+                        Select a post to view and participate in the discussion
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>

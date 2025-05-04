@@ -33,6 +33,10 @@ const Certificates = () => {
     fetchCertificates();
   }, []);
 
+  const getCertificateStatus = (certificate: Certificate): 'Completed' | 'In Progress' => {
+    return certificate.expiryDate && new Date(certificate.expiryDate) < new Date() ? 'In Progress' : 'Completed';
+  }
+
   if (isLoading) {
     return (
       <div className="h-screen flex overflow-hidden bg-gray-50">
@@ -101,7 +105,7 @@ const Certificates = () => {
                   <Card key={certificate._id} className="hover:shadow-lg transition-shadow">
                     <CardHeader className="flex flex-col space-y-1.5">
                       <h3 className="font-semibold">{certificate.title}</h3>
-                      <p className="text-sm text-gray-600">{certificate.issuer}</p>
+                      <p className="text-sm text-gray-600">{certificate.issuedBy}</p>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
@@ -110,19 +114,19 @@ const Certificates = () => {
                             Issued: {new Date(certificate.issueDate).toLocaleDateString()}
                           </span>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            certificate.status === 'Completed' 
+                            getCertificateStatus(certificate) === 'Completed' 
                               ? 'bg-green-100 text-green-800' 
                               : 'bg-yellow-100 text-yellow-800'
                           }`}>
-                            {certificate.status}
+                            {getCertificateStatus(certificate)}
                           </span>
                         </div>
-                        {certificate.status === 'Completed' && (
+                        {getCertificateStatus(certificate) === 'Completed' && (
                           <Button 
                             className="w-full" 
                             variant="outline"
-                            onClick={() => window.open(certificate.credentialUrl || '#', '_blank')}
-                            disabled={!certificate.credentialUrl}
+                            onClick={() => window.open(certificate.verificationLink || '#', '_blank')}
+                            disabled={!certificate.verificationLink}
                           >
                             Download Certificate
                           </Button>
