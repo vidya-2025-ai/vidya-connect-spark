@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Briefcase, CheckCircle, Clock, Award } from 'lucide-react';
 import { applicationService } from '@/services/api/applicationService';
-import { Application } from '@/services/api/types';
+import { certificateService } from '@/services/api/certificateService';
+import { Application, Certificate } from '@/services/api/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const StudentStats = () => {
@@ -22,6 +23,9 @@ const StudentStats = () => {
         // Fetch applications
         const applications = await applicationService.getStudentApplications();
         
+        // Fetch certificates
+        const certificates = await certificateService.getAllCertificates();
+        
         // Calculate stats
         const inProgress = applications.filter(app => 
           app.status === 'Pending' || app.status === 'Under Review'
@@ -31,12 +35,12 @@ const StudentStats = () => {
           app.status === 'Accepted' || app.status === 'Rejected'
         ).length;
         
-        // Set stats (certificates count will be 0 for now)
+        // Set stats including certificate count
         setStats({
           applications: applications.length,
           inProgress,
           completed,
-          certificates: 0, // Can be updated when certificate service is implemented
+          certificates: certificates.length,
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
