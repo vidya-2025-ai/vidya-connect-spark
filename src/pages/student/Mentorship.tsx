@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StudentSidebar from '@/components/dashboard/StudentSidebar';
 import { Button } from "@/components/ui/button";
@@ -196,9 +195,45 @@ const Mentorship = () => {
                       </div>
                       <h3 className="text-lg font-medium mb-2">No mentorship requests yet</h3>
                       <p className="text-gray-500 mb-4">Request mentorship to get guidance from industry experts</p>
-                      <DialogTrigger asChild>
-                        <Button>Request Mentorship</Button>
-                      </DialogTrigger>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button>Request Mentorship</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Request Mentorship</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 mt-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Topic
+                              </label>
+                              <Input 
+                                placeholder="e.g., Career Advice, Technical Skills" 
+                                value={topic} 
+                                onChange={(e) => setTopic(e.target.value)} 
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Message
+                              </label>
+                              <Textarea 
+                                placeholder="Describe what you're looking for help with" 
+                                value={requestText} 
+                                onChange={(e) => setRequestText(e.target.value)}
+                                className="min-h-[100px]" 
+                              />
+                            </div>
+                            <Button 
+                              className="w-full" 
+                              onClick={handleSubmitRequest}
+                            >
+                              Send Request
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                     </CardContent>
                   </Card>
                 ) : (
