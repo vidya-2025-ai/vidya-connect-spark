@@ -1,4 +1,3 @@
-
 // User Types
 export interface User {
   id: string;
@@ -15,6 +14,12 @@ export interface User {
   experience?: Experience[];
   socialLinks?: SocialLinks;
   preferences?: UserPreferences;
+  careerInterests?: string[];
+  yearsOfExperience?: number;
+  location?: string;
+  availability?: string;
+  profileCompleteness?: number;
+  savedOpportunities?: string[] | Opportunity[];
 }
 
 export interface Education {
@@ -87,6 +92,21 @@ export interface Opportunity {
   applications?: string[];
   createdAt: string | Date;
   updatedAt: string | Date;
+  category?: string;
+  experienceLevel?: string;
+  applicationCount?: number;
+  views?: number;
+}
+
+// Application Stats
+export interface ApplicationStats {
+  total: number;
+  pending: number;
+  underReview: number;
+  shortlisted: number;
+  interview: number;
+  accepted: number;
+  rejected: number;
 }
 
 // Application Types
@@ -94,19 +114,35 @@ export interface Application {
   _id: string;
   student: string | User;
   opportunity: string | Opportunity;
-  status: 'Pending' | 'Under Review' | 'Accepted' | 'Rejected';
+  status: 'Pending' | 'Under Review' | 'Shortlisted' | 'Interview' | 'Accepted' | 'Rejected';
   appliedDate: string | Date;
   resumeUrl?: string;
   coverLetter?: string;
   notes?: string;
   activities: ApplicationActivity[];
   lastUpdated: string | Date;
+  rating?: number;
+  interviewDate?: string | Date;
+  feedback?: string;
+  skillMatch?: number;
 }
 
 export interface ApplicationActivity {
   type: string;
   description: string;
   date: string | Date;
+}
+
+// Pagination Response
+export interface PaginatedResponse<T> {
+  opportunities?: T[]; // For opportunities endpoint
+  applications?: T[];  // For applications endpoint
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 // Event Types

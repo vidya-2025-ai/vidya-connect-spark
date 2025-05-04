@@ -64,6 +64,24 @@ const OpportunitySchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  category: {
+    type: String,
+    enum: ['Technology', 'Business', 'Design', 'Marketing', 'Healthcare', 'Education', 'Other'],
+    default: 'Technology'
+  },
+  experienceLevel: {
+    type: String,
+    enum: ['Entry-Level', 'Intermediate', 'Advanced', 'Senior'],
+    default: 'Entry-Level'
+  },
+  applicationCount: {
+    type: Number,
+    default: 0
+  },
+  views: {
+    type: Number,
+    default: 0
   }
 });
 

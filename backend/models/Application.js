@@ -14,7 +14,7 @@ const ApplicationSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Pending', 'Under Review', 'Accepted', 'Rejected'],
+    enum: ['Pending', 'Under Review', 'Shortlisted', 'Interview', 'Accepted', 'Rejected'],
     default: 'Pending'
   },
   appliedDate: {
@@ -47,6 +47,21 @@ const ApplicationSchema = new mongoose.Schema({
   lastUpdated: {
     type: Date,
     default: Date.now
+  },
+  rating: {
+    type: Number,
+    min: 1,
+    max: 5
+  },
+  interviewDate: {
+    type: Date
+  },
+  feedback: {
+    type: String
+  },
+  skillMatch: {
+    type: Number,
+    default: 0
   }
 });
 

@@ -87,7 +87,30 @@ const UserSchema = new mongoose.Schema({
   lastActive: {
     type: Date,
     default: Date.now
-  }
+  },
+  careerInterests: [{
+    type: String
+  }],
+  yearsOfExperience: {
+    type: Number,
+    default: 0
+  },
+  location: {
+    type: String
+  },
+  availability: {
+    type: String,
+    enum: ['Immediate', '2 Weeks', 'Month', 'Negotiable'],
+    default: 'Negotiable'
+  },
+  profileCompleteness: {
+    type: Number,
+    default: 0
+  },
+  savedOpportunities: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Opportunity'
+  }]
 });
 
 // Hash password before saving
