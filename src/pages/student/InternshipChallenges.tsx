@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StudentSidebar from '@/components/dashboard/StudentSidebar';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -65,7 +64,7 @@ const InternshipChallenges = () => {
     }
 
     try {
-      const solution = await challengeService.submitSolution(selectedChallenge.id, {
+      const solution = await challengeService.submitSolution(selectedChallenge._id!, {
         content: solutionContent,
         repositoryUrl: repoUrl
       });
@@ -81,10 +80,10 @@ const InternshipChallenges = () => {
 
       // Update the submission count in the challenge list
       const updatedChallenges = challenges.map(challenge => {
-        if (challenge.id === selectedChallenge.id) {
+        if (challenge._id === selectedChallenge._id) {
           return {
             ...challenge,
-            submissionCount: challenge.submissionCount + 1
+            submissionCount: (challenge.submissionCount || 0) + 1
           };
         }
         return challenge;
@@ -101,7 +100,7 @@ const InternshipChallenges = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | Date) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -110,7 +109,7 @@ const InternshipChallenges = () => {
     });
   };
 
-  const isDeadlinePassed = (deadline: string) => {
+  const isDeadlinePassed = (deadline: string | Date) => {
     return new Date() > new Date(deadline);
   };
 
@@ -237,11 +236,11 @@ const InternshipChallenges = () => {
                   </Card>
                 ) : (
                   filterChallenges('open').map((challenge) => (
-                    <Card key={challenge.id} className="hover:shadow-lg transition-shadow">
+                    <Card key={challenge._id} className="hover:shadow-lg transition-shadow">
                       <CardHeader>
                         <CardTitle className="text-lg">{challenge.title}</CardTitle>
                         <CardDescription>
-                          by {challenge.organization}
+                          by {challenge.organizationName || challenge.organization}
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
@@ -250,7 +249,7 @@ const InternshipChallenges = () => {
                         </p>
                         
                         <div className="flex flex-wrap gap-1 mb-3">
-                          {challenge.skillsRequired.map((skill, index) => (
+                          {(challenge.skillsRequired || challenge.skills || []).map((skill, index) => (
                             <Badge key={index} variant="outline" className="bg-blue-50">
                               {skill}
                             </Badge>
@@ -264,7 +263,7 @@ const InternshipChallenges = () => {
                           </div>
                           <div className="flex items-center">
                             <Users className="h-4 w-4 mr-1" />
-                            <span>{challenge.submissionCount} submissions</span>
+                            <span>{challenge.submissionCount || 0} submissions</span>
                           </div>
                         </div>
                       </CardContent>
@@ -299,11 +298,11 @@ const InternshipChallenges = () => {
                   </Card>
                 ) : (
                   filterChallenges('closed').map((challenge) => (
-                    <Card key={challenge.id} className="hover:shadow-lg transition-shadow">
+                    <Card key={challenge._id} className="hover:shadow-lg transition-shadow">
                       <CardHeader>
                         <CardTitle className="text-lg">{challenge.title}</CardTitle>
                         <CardDescription>
-                          by {challenge.organization}
+                          by {challenge.organizationName || challenge.organization}
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
@@ -312,7 +311,7 @@ const InternshipChallenges = () => {
                         </p>
                         
                         <div className="flex flex-wrap gap-1 mb-3">
-                          {challenge.skillsRequired.map((skill, index) => (
+                          {(challenge.skillsRequired || challenge.skills || []).map((skill, index) => (
                             <Badge key={index} variant="outline" className="bg-blue-50">
                               {skill}
                             </Badge>
@@ -326,7 +325,7 @@ const InternshipChallenges = () => {
                           </div>
                           <div className="flex items-center">
                             <Users className="h-4 w-4 mr-1" />
-                            <span>{challenge.submissionCount} submissions</span>
+                            <span>{challenge.submissionCount || 0} submissions</span>
                           </div>
                         </div>
                         
@@ -364,11 +363,10 @@ const InternshipChallenges = () => {
               ) : (
                 <div className="space-y-6">
                   {mySolutions.map((solution) => (
-                    <Card key={solution.id}>
+                    <Card key={solution._id || solution.id}>
                       <CardHeader>
                         <CardTitle className="text-lg">
-                          {/* In a real app, you'd link the challenge title */}
-                          Challenge: Solution #{solution.id}
+                          Challenge: Solution #{solution._id || solution.id}
                         </CardTitle>
                         <CardDescription>
                           Submitted on {formatDate(solution.submittedAt)}
@@ -381,12 +379,12 @@ const InternshipChallenges = () => {
                           <p className="text-sm font-medium mb-1">Repository URL</p>
                           <p className="text-sm text-blue-600">
                             {solution.attachments && solution.attachments.length > 0 ? 
-                              solution.attachments[0] : 'No repository provided'}
+                              solution.attachments[0] : solution.repositoryUrl || 'No repository provided'}
                           </p>
                         </div>
                         
                         <Badge className={
-                          solution.status === 'evaluated' 
+                          (solution.status === 'evaluated') 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-amber-100 text-amber-800'
                         }>
@@ -429,7 +427,7 @@ const InternshipChallenges = () => {
                 <div className="py-4 max-h-[70vh] overflow-y-auto">
                   <div className="flex justify-between items-center mb-4">
                     <div>
-                      <p className="text-sm text-gray-500">Posted by {selectedChallenge.organization}</p>
+                      <p className="text-sm text-gray-500">Posted by {selectedChallenge.organizationName || selectedChallenge.organization}</p>
                       <p className="text-sm text-gray-500">
                         Created on {formatDate(selectedChallenge.createdAt)}
                       </p>
@@ -452,7 +450,7 @@ const InternshipChallenges = () => {
                     <div>
                       <h3 className="font-medium mb-2">Required Skills</h3>
                       <div className="flex flex-wrap gap-2">
-                        {selectedChallenge.skillsRequired.map((skill, index) => (
+                        {(selectedChallenge.skillsRequired || selectedChallenge.skills || []).map((skill, index) => (
                           <Badge key={index} variant="outline" className="bg-blue-50">
                             {skill}
                           </Badge>

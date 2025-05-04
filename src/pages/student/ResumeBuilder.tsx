@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StudentSidebar from '@/components/dashboard/StudentSidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -241,14 +242,14 @@ const ResumeBuilder = () => {
                       <CardHeader>
                         <CardTitle>{resume.title}</CardTitle>
                         <CardDescription>
-                          Last updated: {formatDate(resume.lastUpdated)}
+                          Last updated: {formatDate(resume.lastUpdated || resume.updatedAt)}
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="text-sm text-gray-600 mb-4">
-                          <p>Experience: {(resume.experience || []).length} entries</p>
-                          <p>Education: {(resume.education || []).length} entries</p>
-                          <p>Skills: {(resume.skills || []).length} skills</p>
+                          <p>Experience: {(resume.experience || resume.content?.experience || []).length} entries</p>
+                          <p>Education: {(resume.education || resume.content?.education || []).length} entries</p>
+                          <p>Skills: {(resume.skills || resume.content?.skills || []).length} skills</p>
                         </div>
                         <div className="flex space-x-2">
                           <Button 
@@ -329,28 +330,28 @@ const ResumeBuilder = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="name">Full Name</Label>
-                          <Input id="name" defaultValue={editResume.personalInfo?.name} />
+                          <Input id="name" defaultValue={editResume.personalInfo?.name || editResume.content?.personalInfo?.name} />
                         </div>
                         <div>
                           <Label htmlFor="email">Email</Label>
-                          <Input id="email" defaultValue={editResume.personalInfo?.email} />
+                          <Input id="email" defaultValue={editResume.personalInfo?.email || editResume.content?.personalInfo?.email} />
                         </div>
                         <div>
                           <Label htmlFor="phone">Phone</Label>
-                          <Input id="phone" defaultValue={editResume.personalInfo?.phone} />
+                          <Input id="phone" defaultValue={editResume.personalInfo?.phone || editResume.content?.personalInfo?.phone} />
                         </div>
                         <div>
                           <Label htmlFor="linkedin">LinkedIn</Label>
-                          <Input id="linkedin" defaultValue={editResume.personalInfo?.linkedin} />
+                          <Input id="linkedin" defaultValue={editResume.personalInfo?.linkedin || editResume.content?.personalInfo?.linkedin} />
                         </div>
                       </div>
                       <div>
                         <Label htmlFor="address">Address</Label>
-                        <Input id="address" defaultValue={editResume.personalInfo?.address} />
+                        <Input id="address" defaultValue={editResume.personalInfo?.address || editResume.content?.personalInfo?.address} />
                       </div>
                       <div>
                         <Label htmlFor="website">Website</Label>
-                        <Input id="website" defaultValue={editResume.personalInfo?.website} />
+                        <Input id="website" defaultValue={editResume.personalInfo?.website || editResume.content?.personalInfo?.website} />
                       </div>
                     </TabsContent>
                     

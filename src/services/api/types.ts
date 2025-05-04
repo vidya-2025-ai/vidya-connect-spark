@@ -134,6 +134,20 @@ export interface Resume {
   isDefault: boolean;
   createdAt: string | Date;
   updatedAt: string | Date;
+  lastUpdated?: string | Date;
+  personalInfo?: {
+    name: string;
+    email: string;
+    phone?: string;
+    address?: string;
+    linkedin?: string;
+    website?: string;
+  };
+  education?: Education[];
+  experience?: Experience[];
+  skills?: string[];
+  projects?: Project[];
+  certifications?: Certification[];
 }
 
 export interface ResumeContent {
@@ -295,29 +309,40 @@ export interface GrievanceResponse {
 // Challenge Types
 export interface Challenge {
   _id: string;
+  id?: string; // Added for frontend compatibility
   title: string;
   description: string;
-  creator: string | User;
-  difficulty: 'easy' | 'medium' | 'hard';
-  skills: string[];
-  instructions: string;
+  creator?: string | User;
+  organization?: string; // Added for frontend compatibility
+  organizationName?: string; // Added for frontend compatibility
+  difficulty?: 'easy' | 'medium' | 'hard';
+  skills?: string[];
+  skillsRequired?: string[]; // Added for frontend compatibility
+  instructions?: string;
   resources?: string[];
-  deadline?: string | Date;
+  deadline: string | Date;
   isActive: boolean;
-  solutions: string[] | ChallengeSolution[];
+  solutions?: string[] | ChallengeSolution[];
+  submissionCount?: number; // Added for frontend compatibility
   createdAt: string | Date;
-  updatedAt: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface ChallengeSolution {
   _id: string;
+  id?: string; // Added for frontend compatibility
   challenge: string | Challenge;
-  student: string | User;
+  student: string | User | {
+    id: string;
+    name: string;
+  };
   content: string;
   repositoryUrl?: string;
   demoUrl?: string;
   feedback?: string;
   score?: number;
+  attachments?: string[]; // Added for frontend compatibility
+  status?: 'submitted' | 'evaluated'; // Added for frontend compatibility
   submittedAt: string | Date;
   evaluatedAt?: string | Date;
 }
