@@ -18,6 +18,7 @@ const communityRoutes = require('./routes/community');
 const grievanceRoutes = require('./routes/grievances');
 const challengeRoutes = require('./routes/challenges');
 const microInternshipRoutes = require('./routes/micro-internships');
+const dashboardRoutes = require('./routes/dashboard');
 
 // Load environment variables
 dotenv.config();
@@ -53,6 +54,7 @@ app.use('/api/community', communityRoutes);
 app.use('/api/grievances', grievanceRoutes);
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/micro-internships', microInternshipRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Default route
 app.get('/', (req, res) => {

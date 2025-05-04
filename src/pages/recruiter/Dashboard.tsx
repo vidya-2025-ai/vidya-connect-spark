@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import RecruiterSidebar from '@/components/dashboard/RecruiterSidebar';
 import MobileMenuToggle from '@/components/layout/MobileMenuToggle';
@@ -10,6 +10,9 @@ import { Bell, Search, Briefcase, Users, Calendar, Star, FileText } from 'lucide
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from '@/hooks/use-toast';
+import { opportunityService } from '@/services/api/exportServices';
+import { Application, Opportunity } from '@/services/api/types';
+import { useQuery } from '@tanstack/react-query';
 
 const Dashboard = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -20,37 +23,67 @@ const Dashboard = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  const stats = [
-    { title: 'Active Jobs', value: '12', change: '+2', status: 'increase', icon: Briefcase, color: 'bg-blue-500' },
-    { title: 'Total Applications', value: '148', change: '+15', status: 'increase', icon: FileText, color: 'bg-purple-500' },
-    { title: 'Interviews Scheduled', value: '8', change: '+3', status: 'increase', icon: Calendar, color: 'bg-amber-500' },
-    { title: 'Mentorship Matches', value: '24', change: '+1', status: 'increase', icon: Star, color: 'bg-green-500' },
-  ];
+  // Fetch dashboard statistics
+  const { data: dashboardStats = { activeJobs: 0, totalApplications: 0, interviewsScheduled: 0, mentorshipMatches: 0 }, 
+          isLoading: isLoadingStats } = useQuery({
+    queryKey: ['dashboardStats'],
+    queryFn: () => opportunityService.getDashboardStats(),
+    onError: (error: any) => {
+      console.error('Error fetching dashboard stats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load dashboard statistics",
+        variant: "destructive"
+      });
+    }
+  });
 
-  const recentApplications = [
-    {
-      id: 1,
-      position: "Software Engineer",
-      candidate: "Alex Johnson",
-      status: "Under Review",
-      date: "2025-04-24",
-      skillMatch: 92,
+  // Fetch recent applications
+  const { data: recentApplications = [], isLoading: isLoadingApplications } = useQuery({
+    queryKey: ['recentApplications'],
+    queryFn: () => opportunityService.getRecentApplications(3),
+    onError: (error: any) => {
+      console.error('Error fetching recent applications:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load recent applications",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const stats = [
+    { 
+      title: 'Active Jobs',
+      value: isLoadingStats ? '...' : dashboardStats.activeJobs.toString(), 
+      change: '+2', 
+      status: 'increase', 
+      icon: Briefcase, 
+      color: 'bg-blue-500' 
     },
-    {
-      id: 2,
-      position: "Product Manager",
-      candidate: "Sarah Smith",
-      status: "Scheduled",
-      date: "2025-04-23",
-      skillMatch: 88,
+    { 
+      title: 'Total Applications', 
+      value: isLoadingStats ? '...' : dashboardStats.totalApplications.toString(), 
+      change: '+15', 
+      status: 'increase', 
+      icon: FileText, 
+      color: 'bg-purple-500' 
     },
-    {
-      id: 3,
-      position: "UI/UX Designer",
-      candidate: "Michael Brown",
-      status: "Pending",
-      date: "2025-04-22",
-      skillMatch: 94,
+    { 
+      title: 'Interviews Scheduled', 
+      value: isLoadingStats ? '...' : dashboardStats.interviewsScheduled.toString(), 
+      change: '+3', 
+      status: 'increase', 
+      icon: Calendar, 
+      color: 'bg-amber-500' 
+    },
+    { 
+      title: 'Mentorship Matches', 
+      value: isLoadingStats ? '...' : dashboardStats.mentorshipMatches.toString(), 
+      change: '+1', 
+      status: 'increase', 
+      icon: Star, 
+      color: 'bg-green-500' 
     },
   ];
 
@@ -167,28 +200,44 @@ const Dashboard = () => {
                     </div>
                     <CardContent className="p-0">
                       <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                        {recentApplications.map((application) => (
-                          <div 
-                            key={application.id}
-                            className="flex items-center justify-between p-6 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                          >
-                            <div>
-                              <h4 className="font-medium text-gray-900 dark:text-white">{application.position}</h4>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">{application.candidate}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{new Date(application.date).toLocaleDateString()}</p>
+                        {isLoadingApplications ? (
+                          <div className="p-6 text-center text-gray-500 dark:text-gray-400">Loading recent applications...</div>
+                        ) : recentApplications.length > 0 ? (
+                          recentApplications.map((application: any) => (
+                            <div 
+                              key={application._id}
+                              className="flex items-center justify-between p-6 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                            >
+                              <div>
+                                <h4 className="font-medium text-gray-900 dark:text-white">
+                                  {application.opportunity?.title || "Unknown Position"}
+                                </h4>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  {application.student?.firstName} {application.student?.lastName || "Unknown Candidate"}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                  {new Date(application.appliedDate).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <div className="flex items-center space-x-4">
+                                {application.skillMatch && (
+                                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 flex items-center">
+                                    <Star className="h-3 w-3 mr-1" fill="currentColor" />
+                                    {application.skillMatch}% Match
+                                  </Badge>
+                                )}
+                                <Badge>{application.status}</Badge>
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-4">
-                              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 flex items-center">
-                                <Star className="h-3 w-3 mr-1" fill="currentColor" />
-                                {application.skillMatch}% Match
-                              </Badge>
-                              <Badge>{application.status}</Badge>
-                            </div>
-                          </div>
-                        ))}
+                          ))
+                        ) : (
+                          <div className="p-6 text-center text-gray-500 dark:text-gray-400">No recent applications</div>
+                        )}
                       </div>
                       <div className="p-6 border-t border-gray-200 dark:border-gray-700">
-                        <Button variant="outline" className="w-full">View All Applications</Button>
+                        <Button variant="outline" className="w-full" onClick={() => window.location.href = '/recruiter/applications'}>
+                          View All Applications
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -214,7 +263,9 @@ const Dashboard = () => {
                         ))}
                       </div>
                       <div className="p-6 border-t border-gray-200 dark:border-gray-700">
-                        <Button variant="outline" className="w-full">View Calendar</Button>
+                        <Button variant="outline" className="w-full" onClick={() => window.location.href = '/recruiter/schedule'}>
+                          View Calendar
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>

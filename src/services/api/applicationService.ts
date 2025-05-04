@@ -1,3 +1,4 @@
+
 import api from './index';
 import { Application, PaginatedResponse } from './types';
 
@@ -59,6 +60,26 @@ export const applicationService = {
   
   addFeedback: async (id: string, feedback: string, rating?: number): Promise<Application> => {
     const response = await api.post<Application>(`/applications/${id}/feedback`, { feedback, rating });
+    return response.data;
+  },
+  
+  getApplicationsByStatus: async (status: string): Promise<Application[]> => {
+    const response = await api.get<PaginatedResponse<Application>>('/applications/recruiter', { 
+      params: { status } 
+    });
+    return response.data.applications || [];
+  },
+  
+  getApplicationStats: async (): Promise<{
+    total: number;
+    pending: number;
+    underReview: number;
+    shortlisted: number;
+    interview: number;
+    accepted: number;
+    rejected: number;
+  }> => {
+    const response = await api.get('/applications/recruiter/stats');
     return response.data;
   }
 };

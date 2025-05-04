@@ -1,3 +1,4 @@
+
 import api from './index';
 import { Opportunity, PaginatedResponse, ApplicationStats } from './types';
 
@@ -79,6 +80,21 @@ export const opportunityService = {
     filters: { status?: string, sort?: string, order?: 'asc' | 'desc' } = {}
   ): Promise<any[]> => {
     const response = await api.get(`/opportunities/${opportunityId}/candidates`, { params: filters });
+    return response.data;
+  },
+  
+  getDashboardStats: async (): Promise<{
+    activeJobs: number;
+    totalApplications: number;
+    interviewsScheduled: number;
+    mentorshipMatches: number;
+  }> => {
+    const response = await api.get('/opportunities/recruiter/stats');
+    return response.data;
+  },
+  
+  getRecentApplications: async (limit: number = 5): Promise<any[]> => {
+    const response = await api.get('/applications/recruiter/recent', { params: { limit } });
     return response.data;
   }
 };

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import RecruiterSidebar from '@/components/dashboard/RecruiterSidebar';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,63 +24,76 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { useQuery } from '@tanstack/react-query';
+import { applicationService } from '@/services/api/exportServices';
+import { useToast } from '@/hooks/use-toast';
+import { Application } from '@/services/api/types';
 
 const Applications = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [sortBy, setSortBy] = useState<string>('newest');
+  const { toast } = useToast();
   
-  const applications = [
-    {
-      id: 1,
-      candidate: "Alex Johnson",
-      position: "Senior Software Engineer",
-      appliedDate: "2025-04-20",
-      status: "Under Review",
-      skillMatch: 92,
-      education: "B.Tech Computer Science",
-      experience: "5 years"
+  // Fetch all applications for recruiter
+  const { data: applications = [], isLoading, refetch } = useQuery({
+    queryKey: ['recruiterApplications', statusFilter, sortBy],
+    queryFn: async () => {
+      let filters: any = {};
+      
+      if (statusFilter) {
+        filters.status = statusFilter;
+      }
+      
+      if (sortBy === 'newest') {
+        filters.sortBy = 'appliedDate';
+        filters.sortOrder = 'desc';
+      } else if (sortBy === 'skillmatch') {
+        filters.sortBy = 'skillMatch';
+        filters.sortOrder = 'desc';
+      } else if (sortBy === 'alphabetical') {
+        filters.sortBy = 'student.firstName';
+        filters.sortOrder = 'asc';
+      }
+      
+      if (searchTerm) {
+        filters.search = searchTerm;
+      }
+      
+      return await applicationService.getRecruiterApplications(filters);
     },
-    {
-      id: 2,
-      candidate: "Sarah Williams",
-      position: "Product Manager",
-      appliedDate: "2025-04-19",
-      status: "Shortlisted",
-      skillMatch: 88,
-      education: "MBA",
-      experience: "3 years"
-    },
-    {
-      id: 3,
-      candidate: "Michael Brown",
-      position: "UI/UX Designer",
-      appliedDate: "2025-04-18",
-      status: "Rejected",
-      skillMatch: 75,
-      education: "BFA Graphic Design",
-      experience: "2 years"
-    },
-    {
-      id: 4,
-      candidate: "Emily Chen",
-      position: "Data Science Intern",
-      appliedDate: "2025-04-22",
-      status: "Under Review",
-      skillMatch: 96,
-      education: "MS Data Science",
-      experience: "1 year"
-    },
-    {
-      id: 5,
-      candidate: "David Kim",
-      position: "Marketing Challenge",
-      appliedDate: "2025-04-23",
-      status: "Shortlisted",
-      skillMatch: 90,
-      education: "BA Marketing",
-      experience: "4 years"
+    onError: (error: any) => {
+      console.error('Error fetching applications:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load applications",
+        variant: "destructive"
+      });
     }
-  ];
+  });
+
+  const handleUpdateStatus = async (applicationId: string, newStatus: string) => {
+    try {
+      await applicationService.updateApplicationStatus(applicationId, newStatus);
+      toast({
+        title: "Status Updated",
+        description: "Application status has been updated",
+      });
+      refetch();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update application status",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const applyFilters = () => {
+    refetch();
+  };
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
@@ -101,6 +114,7 @@ const Applications = () => {
                     type="search"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
                   />
                 </div>
               </div>
@@ -140,7 +154,7 @@ const Applications = () => {
                     <Filter className="h-4 w-4" />
                     Filter
                   </Button>
-                  <Select defaultValue="newest">
+                  <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger className="w-[160px]">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
@@ -160,9 +174,13 @@ const Applications = () => {
                       <div>
                         <h3 className="mb-3 font-medium text-gray-900 dark:text-white">Status</h3>
                         <div className="space-y-2">
-                          {["Under Review", "Shortlisted", "Scheduled", "Rejected"].map((status) => (
+                          {["Under Review", "Shortlisted", "Interview", "Rejected", "Pending", "Accepted"].map((status) => (
                             <div key={status} className="flex items-center space-x-2">
-                              <Checkbox id={`status-${status}`} />
+                              <Checkbox 
+                                id={`status-${status}`} 
+                                checked={statusFilter === status}
+                                onCheckedChange={() => setStatusFilter(statusFilter === status ? '' : status)}
+                              />
                               <Label htmlFor={`status-${status}`} className="text-sm">{status}</Label>
                             </div>
                           ))}
@@ -212,7 +230,7 @@ const Applications = () => {
                           </SelectContent>
                         </Select>
                         <div className="mt-4">
-                          <Button className="w-full">Apply Filters</Button>
+                          <Button className="w-full" onClick={applyFilters}>Apply Filters</Button>
                         </div>
                       </div>
                     </div>
@@ -221,61 +239,86 @@ const Applications = () => {
               )}
 
               <div className="mt-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Candidate</TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Applied Date</TableHead>
-                      <TableHead>Skill Match</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {applications.map((application) => (
-                      <TableRow key={application.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center space-x-3">
-                            <Avatar>
-                              <AvatarFallback>{application.candidate.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium text-gray-900 dark:text-white">{application.candidate}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">{application.education}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{application.position}</TableCell>
-                        <TableCell>{new Date(application.appliedDate).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 flex items-center">
-                            <Star className="h-3 w-3 mr-1" fill="currentColor" />
-                            {application.skillMatch}%
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              application.status === "Shortlisted"
-                                ? "default"
-                                : application.status === "Under Review"
-                                ? "secondary"
-                                : "destructive"
-                            }
-                          >
-                            {application.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="outline" size="sm">
-                            View Details
-                          </Button>
-                        </TableCell>
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 dark:text-gray-400">Loading applications...</p>
+                  </div>
+                ) : applications.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 dark:text-gray-400">No applications found</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Candidate</TableHead>
+                        <TableHead>Position</TableHead>
+                        <TableHead>Applied Date</TableHead>
+                        <TableHead>Skill Match</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Action</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {applications.map((application: any) => (
+                        <TableRow key={application._id}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center space-x-3">
+                              <Avatar>
+                                <AvatarFallback>
+                                  {application.student?.firstName ? application.student.firstName[0] : ''}
+                                  {application.student?.lastName ? application.student.lastName[0] : ''}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium text-gray-900 dark:text-white">
+                                  {application.student?.firstName} {application.student?.lastName}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {application.student?.education?.[0]?.degree || 'No education info'}
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {application.opportunity?.title || 'Unknown Position'}
+                          </TableCell>
+                          <TableCell>
+                            {new Date(application.appliedDate).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            {application.skillMatch && (
+                              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 flex items-center">
+                                <Star className="h-3 w-3 mr-1" fill="currentColor" />
+                                {application.skillMatch}%
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Select defaultValue={application.status} onValueChange={(value) => handleUpdateStatus(application._id, value)}>
+                              <SelectTrigger className="w-[140px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Pending">Pending</SelectItem>
+                                <SelectItem value="Under Review">Under Review</SelectItem>
+                                <SelectItem value="Shortlisted">Shortlisted</SelectItem>
+                                <SelectItem value="Interview">Interview</SelectItem>
+                                <SelectItem value="Accepted">Accepted</SelectItem>
+                                <SelectItem value="Rejected">Rejected</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="outline" size="sm" onClick={() => window.location.href = `/recruiter/applications/${application._id}`}>
+                              View Details
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </div>
             </div>
           </div>
