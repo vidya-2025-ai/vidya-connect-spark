@@ -53,6 +53,7 @@ export const mentorshipService = {
   createMentorshipRequest: async (mentorshipData: {
     mentorId: string;
     message: string;
+    topic?: string;
   }): Promise<MentorshipRequest> => {
     const response = await api.post<MentorshipRequest>('/mentorship/request', mentorshipData);
     return response.data;

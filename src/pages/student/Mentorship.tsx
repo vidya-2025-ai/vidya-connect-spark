@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StudentSidebar from '@/components/dashboard/StudentSidebar';
 import { Button } from "@/components/ui/button";
@@ -55,7 +56,7 @@ const Mentorship = () => {
     
     try {
       const newMentorship = await mentorshipService.createMentorshipRequest({
-        mentor: selectedMentor,
+        mentorId: selectedMentor,
         topic,
         message: requestText
       });
@@ -241,7 +242,7 @@ const Mentorship = () => {
                     {mentorships.map((mentorship) => (
                       <Card key={mentorship._id}>
                         <CardHeader>
-                          <CardTitle>{mentorship.topic}</CardTitle>
+                          <CardTitle>{mentorship.topic || "Mentorship Request"}</CardTitle>
                           <CardDescription>{new Date(mentorship.createdAt).toLocaleDateString()}</CardDescription>
                         </CardHeader>
                         <CardContent>

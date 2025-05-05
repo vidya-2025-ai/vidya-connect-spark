@@ -286,6 +286,7 @@ export interface MentorshipRequest {
   mentor: string | User;
   status: 'pending' | 'accepted' | 'rejected' | 'completed';
   message?: string;
+  topic?: string;
   createdAt: string | Date;
   updatedAt: string | Date;
 }

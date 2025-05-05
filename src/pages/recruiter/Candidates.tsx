@@ -46,12 +46,16 @@ const Candidates = () => {
   } = useQuery({
     queryKey: ['candidates', filters],
     queryFn: () => candidateService.searchCandidates(filters),
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Could not load candidates. Please try again.",
-        variant: "destructive"
-      });
+    meta: {
+      onSettled: (data, error) => {
+        if (error) {
+          toast({
+            title: "Error",
+            description: "Could not load candidates. Please try again.",
+            variant: "destructive"
+          });
+        }
+      }
     }
   });
 
