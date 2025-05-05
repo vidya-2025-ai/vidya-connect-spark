@@ -14,12 +14,12 @@ export interface ApplicationFilters {
 export const applicationService = {
   getStudentApplications: async (filters: ApplicationFilters = {}): Promise<Application[]> => {
     const response = await api.get<PaginatedResponse<Application>>('/applications', { params: filters });
-    return response.data.applications || [];
+    return response.data.data || response.data.applications || [];
   },
   
   getRecruiterApplications: async (filters: ApplicationFilters = {}): Promise<Application[]> => {
     const response = await api.get<PaginatedResponse<Application>>('/applications/recruiter', { params: filters });
-    return response.data.applications || [];
+    return response.data.data || response.data.applications || [];
   },
   
   getOpportunityApplications: async (
@@ -30,7 +30,7 @@ export const applicationService = {
       `/applications/opportunity/${opportunityId}`, 
       { params: filters }
     );
-    return response.data.applications || [];
+    return response.data.data || response.data.applications || [];
   },
   
   createApplication: async (opportunityId: string, applicationData: any): Promise<Application> => {
@@ -67,7 +67,7 @@ export const applicationService = {
     const response = await api.get<PaginatedResponse<Application>>('/applications/recruiter', { 
       params: { status } 
     });
-    return response.data.applications || [];
+    return response.data.data || response.data.applications || [];
   },
   
   getApplicationStats: async (): Promise<{

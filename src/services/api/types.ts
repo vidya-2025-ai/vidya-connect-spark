@@ -9,10 +9,22 @@ export interface PaginatedResponse<T> {
   challenges?: T[];
   mentorships?: T[];
   mentors?: T[];
+  applications?: T[];
+  opportunities?: T[];
   totalCount?: number;
   page?: number;
   limit?: number;
   totalPages?: number;
+}
+
+export interface RegisterData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role: 'student' | 'recruiter';
+  organization?: string;
+  jobTitle?: string;
 }
 
 export interface User {
@@ -53,7 +65,7 @@ export interface Application {
   opportunity: {
     id: string;
     title: string;
-    organization?: { organization: string };
+    organization?: string;
   };
   student: User;
   status: string;
@@ -128,21 +140,13 @@ export interface Grievance {
     name: string;
     role: string;
   };
-  responses: {
-    id: string;
-    content: string;
-    responder: {
-      id: string;
-      name: string;
-      role: string;
-    };
-    createdAt: string;
-  }[];
+  responses: GrievanceResponse[];
   createdAt: string;
 }
 
 export interface GrievanceResponse {
   id: string;
+  _id?: string; // Adding both for compatibility
   content: string;
   responder: {
     id: string;
@@ -158,7 +162,9 @@ export interface Challenge {
   title: string;
   description: string;
   organization: string;
+  organizationName?: string; // Alias for organization in some components
   skillsRequired: string[];
+  skills?: string[]; // Alias for skillsRequired in some components
   deadline: string;
   submissionCount: number;
   isActive: boolean;
@@ -179,6 +185,7 @@ export interface ChallengeSolution {
   feedback?: string;
   status: 'submitted' | 'evaluated';
   submittedAt: string;
+  repositoryUrl?: string;
 }
 
 export interface MentorshipRequest {
@@ -260,6 +267,8 @@ export interface Resume {
   }[];
   atsScore?: number;
   lastUpdated: string;
+  updatedAt?: string; // Alias for lastUpdated
+  content?: any; // For content fields in ResumeBuilder
 }
 
 export interface Certificate {
@@ -274,6 +283,8 @@ export interface Certificate {
   certificateImage?: string;
   skills: string[];
   status: 'In Progress' | 'Completed';
+  issuedBy?: string; // Alias for issuer
+  verificationLink?: string; // For certificate verification
 }
 
 export interface ATSParameter {
@@ -297,4 +308,60 @@ export interface ATSParameter {
   };
   active: boolean;
   createdAt: string;
+}
+
+export interface Skill {
+  id: string;
+  name: string;
+  category?: string;
+  description?: string;
+  level?: number;
+}
+
+export interface UserSkill {
+  id: string;
+  skill: Skill;
+  level: number;
+  assessments: {
+    score: number;
+    date: string;
+    certificate?: Certificate;
+  }[];
+}
+
+export interface MicroInternship {
+  id: string;
+  title: string;
+  description: string;
+  organization: string;
+  duration: string;
+  skillsRequired: string[];
+  stipend: {
+    amount: number;
+    currency: string;
+  };
+  deadline: string;
+  applicants: number;
+  createdAt: string;
+}
+
+export interface MicroInternshipApplication {
+  id: string;
+  internshipId: string;
+  student: {
+    id: string;
+    name: string;
+  };
+  status: 'pending' | 'accepted' | 'rejected' | 'shortlisted';
+  appliedAt: string;
+}
+
+export interface ApplicationStats {
+  total: number;
+  pending: number;
+  underReview: number;
+  shortlisted: number;
+  interview: number;
+  accepted: number;
+  rejected: number;
 }

@@ -2,7 +2,7 @@
 import api from './index';
 import { User, RegisterData } from './types';
 
-export interface LoginResponse {
+interface LoginResponse {
   token: string;
   user: User;
 }
@@ -19,8 +19,8 @@ export const authService = {
   },
   
   logout: async (): Promise<void> => {
-    const response = await api.post<void>('/auth/logout');
-    return response.data;
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   },
   
   getCurrentUser: async (): Promise<User> => {
@@ -28,8 +28,18 @@ export const authService = {
     return response.data;
   },
   
-  updateProfile: async (profileData: Partial<User>): Promise<User> => {
-    const response = await api.put<User>('/users/profile', profileData);
+  forgotPassword: async (email: string): Promise<{ message: string }> => {
+    const response = await api.post<{ message: string }>('/auth/forgot-password', { email });
+    return response.data;
+  },
+  
+  resetPassword: async (token: string, password: string): Promise<{ message: string }> => {
+    const response = await api.post<{ message: string }>('/auth/reset-password', { token, password });
+    return response.data;
+  },
+  
+  verifyEmail: async (token: string): Promise<{ message: string }> => {
+    const response = await api.get<{ message: string }>(`/auth/verify-email/${token}`);
     return response.data;
   }
 };

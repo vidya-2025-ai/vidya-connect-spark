@@ -16,9 +16,10 @@ import microInternshipService from './microInternshipService';
 import userService from './userService';
 import dashboardService from './dashboardService';
 import skillAssessmentService from './skillAssessmentService';
+import candidateService from './candidateService';
 
 // Also export all types
-import {
+import type {
   User,
   Application,
   Event,
@@ -33,7 +34,13 @@ import {
   Resume,
   Certificate,
   ATSParameter,
-  Opportunity
+  Opportunity,
+  Skill,
+  UserSkill,
+  MicroInternship,
+  MicroInternshipApplication,
+  ApplicationStats,
+  RegisterData
 } from './types';
 
 export {
@@ -54,21 +61,28 @@ export {
   userService,
   dashboardService,
   skillAssessmentService,
+  candidateService,
   
-  // Types
-  User,
-  Application,
-  Event,
-  CommunityPost,
-  PostComment,
-  Grievance,
-  GrievanceResponse,
-  Challenge,
-  ChallengeSolution,
-  MentorshipRequest,
-  PaginatedResponse,
-  Resume,
-  Certificate,
-  ATSParameter,
-  Opportunity
+  // Types - using 'export type' for all type exports
+  type User,
+  type Application,
+  type Event,
+  type CommunityPost,
+  type PostComment,
+  type Grievance,
+  type GrievanceResponse,
+  type Challenge,
+  type ChallengeSolution,
+  type MentorshipRequest,
+  type PaginatedResponse,
+  type Resume,
+  type Certificate,
+  type ATSParameter,
+  type Opportunity,
+  type Skill,
+  type UserSkill,
+  type MicroInternship,
+  type MicroInternshipApplication,
+  type ApplicationStats,
+  type RegisterData
 };

@@ -18,6 +18,15 @@ export const skillService = {
     return response.data;
   },
   
+  updateUserSkill: async (skillId: string, skillData: any): Promise<UserSkill> => {
+    const response = await api.put<UserSkill>(`/skills/user/${skillId}`, skillData);
+    return response.data;
+  },
+  
+  deleteUserSkill: async (skillId: string): Promise<void> => {
+    await api.delete(`/skills/user/${skillId}`);
+  },
+  
   addSkillAssessment: async (skillId: string, assessmentData: any): Promise<UserSkill> => {
     const response = await api.post<UserSkill>(`/skills/user/${skillId}/assessment`, assessmentData);
     return response.data;

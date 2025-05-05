@@ -27,7 +27,7 @@ export const opportunityService = {
         skills: filters.skills ? filters.skills.join(',') : undefined
       }
     });
-    return response.data.opportunities || [];
+    return response.data.data || response.data.opportunities || [];
   },
   
   getRecruiterOpportunities: async (filters: { status?: string, sortBy?: string, sortOrder?: 'asc' | 'desc' } = {}): Promise<OpportunityWithStats[]> => {
