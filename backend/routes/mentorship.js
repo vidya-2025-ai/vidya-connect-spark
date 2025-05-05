@@ -1,18 +1,61 @@
-
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const User = require('../models/User');
 const Mentorship = require('../models/Mentorship');
 
-// Get available mentors
+// Get available mentors with filtering and pagination
 router.get('/mentors', auth, async (req, res) => {
   try {
-    const mentors = await User.find({ 
-      role: 'recruiter',
-    }).select('-password');
+    const { skills, organization, experience, page = 1, limit = 10 } = req.query;
     
-    res.json(mentors);
+    // Build query
+    const query = { role: 'recruiter' };
+    
+    // Filter by skills
+    if (skills) {
+      const skillsArray = skills.split(',').map(s => s.trim());
+      query.skills = { $in: skillsArray };
+    }
+    
+    // Filter by organization
+    if (organization) {
+      query.organization = new RegExp(organization, 'i');
+    }
+    
+    // Filter by experience
+    if (experience) {
+      if (experience === 'senior') {
+        query.yearsOfExperience = { $gte: 5 };
+      } else if (experience === 'mid') {
+        query.yearsOfExperience = { $gte: 3, $lt: 5 };
+      } else if (experience === 'junior') {
+        query.yearsOfExperience = { $lt: 3 };
+      }
+    }
+    
+    // Pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Find mentors
+    const mentors = await User.find(query)
+      .select('-password')
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ lastActive: -1 });
+    
+    // Count total for pagination
+    const total = await User.countDocuments(query);
+    
+    res.json({
+      mentors,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -40,21 +83,45 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// Get user's mentorship requests
+// Get user's mentorship requests with filtering and pagination
 router.get('/my', auth, async (req, res) => {
   try {
+    const { status, page = 1, limit = 10 } = req.query;
+    
     // If student, get mentorships where user is student
     // If recruiter, get mentorships where user is mentor
     const query = req.user.role === 'student' 
       ? { student: req.user.id }
       : { mentor: req.user.id };
     
+    // Filter by status if specified
+    if (status && ['pending', 'accepted', 'rejected'].includes(status)) {
+      query.status = status;
+    }
+    
+    // Pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Get mentorships
     const mentorships = await Mentorship.find(query)
       .populate('mentor', 'firstName lastName organization jobTitle avatar')
-      .populate('student', 'firstName lastName avatar')
+      .populate('student', 'firstName lastName avatar skills')
+      .skip(skip)
+      .limit(parseInt(limit))
       .sort({ createdAt: -1 });
     
-    res.json(mentorships);
+    // Get total count
+    const total = await Mentorship.countDocuments(query);
+    
+    res.json({
+      mentorships,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -143,6 +210,46 @@ router.put('/:id/status', auth, async (req, res) => {
     await mentorship.populate('student', 'firstName lastName avatar');
     
     res.json(mentorship);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get mentorship statistics for recruiter
+router.get('/stats', auth, async (req, res) => {
+  try {
+    // Ensure user is a recruiter
+    if (req.user.role !== 'recruiter') {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    
+    // Get mentorship requests count by status
+    const totalRequests = await Mentorship.countDocuments({ mentor: req.user.id });
+    const pendingRequests = await Mentorship.countDocuments({ mentor: req.user.id, status: 'pending' });
+    const acceptedRequests = await Mentorship.countDocuments({ mentor: req.user.id, status: 'accepted' });
+    const rejectedRequests = await Mentorship.countDocuments({ mentor: req.user.id, status: 'rejected' });
+    
+    // Get active mentees
+    const activeMentees = await Mentorship.countDocuments({ 
+      mentor: req.user.id,
+      status: 'accepted'
+    });
+    
+    // Get recent mentorship requests
+    const recentRequests = await Mentorship.find({ mentor: req.user.id })
+      .populate('student', 'firstName lastName avatar')
+      .sort({ createdAt: -1 })
+      .limit(5);
+    
+    res.json({
+      totalRequests,
+      pendingRequests,
+      acceptedRequests,
+      rejectedRequests,
+      activeMentees,
+      recentRequests
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

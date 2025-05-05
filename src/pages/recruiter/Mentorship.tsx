@@ -1,303 +1,322 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import RecruiterSidebar from '@/components/dashboard/RecruiterSidebar';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Bell, Search, Star, MessageSquare, Calendar } from 'lucide-react';
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Search, CheckCircle, XCircle, Clock } from 'lucide-react';
+import mentorshipService from '@/services/api/mentorshipService';
+import { MentorshipRequest } from '@/services/api/types';
+import { useToast } from '@/hooks/use-toast';
 
 const Mentorship = () => {
-  const mentees = [
-    {
-      id: 1,
-      name: "Alex Johnson",
-      role: "Software Engineering Intern",
-      goals: ["Master React & TypeScript", "System Design Skills"],
-      progress: 75,
-      nextMeeting: "Apr 30, 2:00 PM",
-      skillGrowth: 23
-    },
-    {
-      id: 2,
-      name: "Sarah Williams",
-      role: "Product Management Intern",
-      goals: ["Product Strategy", "User Research Methods"],
-      progress: 60,
-      nextMeeting: "May 2, 10:30 AM",
-      skillGrowth: 18
-    },
-    {
-      id: 3,
-      name: "Michael Brown",
-      role: "UI/UX Design Intern",
-      goals: ["Advanced Figma Techniques", "User Testing"],
-      progress: 40,
-      nextMeeting: "May 3, 1:00 PM",
-      skillGrowth: 15
+  const { toast } = useToast();
+  const [selectedTab, setSelectedTab] = useState('pending');
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const { data: mentorshipStats, isLoading: statsLoading } = useQuery({
+    queryKey: ['mentorshipStats'],
+    queryFn: mentorshipService.getMentorshipStats,
+    meta: {
+      onSettled: (data, error) => {
+        if (error) {
+          toast({
+            title: "Error",
+            description: "Failed to load mentorship statistics",
+            variant: "destructive"
+          });
+        }
+      }
     }
-  ];
-
-  const potentialMentees = [
-    {
-      id: 4,
-      name: "Emily Chen",
-      role: "Data Science Intern",
-      interests: ["Machine Learning", "Data Visualization", "NLP"],
-      skillMatch: 92,
-      message: "I'm looking to improve my skills in machine learning and would love guidance from an experienced professional."
-    },
-    {
-      id: 5,
-      name: "David Kim",
-      role: "Marketing Intern",
-      interests: ["Content Strategy", "Growth Marketing", "Analytics"],
-      skillMatch: 85,
-      message: "I'm passionate about growth marketing and would appreciate mentorship from someone with industry experience."
+  });
+  
+  const { data: mentorships, isLoading, isError, refetch } = useQuery({
+    queryKey: ['mentorships', selectedTab],
+    queryFn: () => mentorshipService.getMyMentorships({ status: selectedTab === 'all' ? undefined : selectedTab }),
+    meta: {
+      onSettled: (data, error) => {
+        if (error) {
+          toast({
+            title: "Error",
+            description: "Failed to load mentorship requests",
+            variant: "destructive"
+          });
+        }
+      }
     }
-  ];
+  });
+  
+  const filteredMentorships = mentorships?.filter(mentorship => {
+    if (!searchTerm) return true;
+    
+    const studentName = typeof mentorship.student === 'string' 
+      ? ''
+      : `${mentorship.student.firstName} ${mentorship.student.lastName}`.toLowerCase();
+    
+    return studentName.includes(searchTerm.toLowerCase());
+  });
+  
+  const handleStatusChange = async (id: string, status: string) => {
+    try {
+      await mentorshipService.updateMentorshipStatus(id, status);
+      toast({
+        title: "Status Updated",
+        description: `Mentorship request ${status === 'accepted' ? 'accepted' : 'rejected'}.`
+      });
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update mentorship status",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
       <RecruiterSidebar />
-      <div className="flex flex-col w-0 flex-1 overflow-hidden">
-        {/* Top bar */}
-        <div className="relative z-10 flex-shrink-0 flex h-16 bg-white shadow dark:bg-gray-800 dark:border-gray-700">
-          <div className="flex-1 px-4 flex justify-between">
-            <div className="flex-1 flex">
-              <div className="w-full flex md:ml-0">
-                <div className="relative w-full text-gray-400 focus-within:text-gray-600">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3">
-                    <Search className="h-5 w-5" aria-hidden="true" />
-                  </div>
-                  <Input
-                    className="block w-full h-full pl-10 pr-3 py-2 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-                    placeholder="Search mentees..."
-                    type="search"
-                  />
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <div className="px-6 py-8">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Mentorship Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Manage your mentorship requests and engage with students
+          </p>
+          
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card>
+              <CardContent className="p-6 flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Pending Requests</p>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {statsLoading ? '-' : mentorshipStats?.pendingRequests || 0}
+                  </h3>
                 </div>
-              </div>
-            </div>
-            <div className="ml-4 flex items-center md:ml-6">
-              <button
-                type="button"
-                className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:hover:text-gray-300"
-              >
-                <span className="sr-only">View notifications</span>
-                <Bell className="h-6 w-6" aria-hidden="true" />
-              </button>
-
-              <div className="ml-3 relative">
-                <div className="flex items-center">
-                  <Avatar>
-                    <AvatarFallback>SR</AvatarFallback>
-                  </Avatar>
+                <div className="rounded-full p-3 bg-yellow-100 dark:bg-yellow-900">
+                  <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                 </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6 flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Active Mentees</p>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {statsLoading ? '-' : mentorshipStats?.activeMentees || 0}
+                  </h3>
+                </div>
+                <div className="rounded-full p-3 bg-green-100 dark:bg-green-900">
+                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6 flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Declined Requests</p>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {statsLoading ? '-' : mentorshipStats?.rejectedRequests || 0}
+                  </h3>
+                </div>
+                <div className="rounded-full p-3 bg-red-100 dark:bg-red-900">
+                  <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6 flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Requests</p>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {statsLoading ? '-' : mentorshipStats?.totalRequests || 0}
+                  </h3>
+                </div>
+                <div className="rounded-full p-3 bg-blue-100 dark:bg-blue-900">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 dark:text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                  </svg>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Mentorship Requests</h2>
+            <div className="flex items-center">
+              <div className="relative mr-4">
+                <Input
+                  placeholder="Search by student name"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               </div>
+              <Select defaultValue="newest">
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="oldest">Oldest First</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </div>
-
-        <div className="flex-1 overflow-auto">
-          <div className="py-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Mentorship Program</h1>
-                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                    Guide and support interns through personalized mentorship
+          
+          <Tabs defaultValue="pending" value={selectedTab} onValueChange={setSelectedTab}>
+            <TabsList className="grid w-full grid-cols-4 mb-6">
+              <TabsTrigger value="pending">Pending</TabsTrigger>
+              <TabsTrigger value="accepted">Accepted</TabsTrigger>
+              <TabsTrigger value="rejected">Rejected</TabsTrigger>
+              <TabsTrigger value="all">All Requests</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value={selectedTab}>
+              {isLoading ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 dark:text-gray-400">Loading mentorship requests...</p>
+                </div>
+              ) : isError ? (
+                <div className="text-center py-12">
+                  <p className="text-red-500">Error loading mentorship requests</p>
+                  <Button variant="outline" className="mt-4" onClick={() => refetch()}>
+                    Try Again
+                  </Button>
+                </div>
+              ) : filteredMentorships && filteredMentorships.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 dark:text-gray-400">
+                    No {selectedTab === 'all' ? '' : selectedTab} mentorship requests found.
                   </p>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Mentees</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-gray-900 dark:text-white">3</div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Active mentorship relationships</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Sessions</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-gray-900 dark:text-white">12</div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Mentorship sessions conducted</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Skill Growth</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-gray-900 dark:text-white">+18%</div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Average skill improvement</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Tabs defaultValue="current" className="w-full">
-                <TabsList className="mb-6">
-                  <TabsTrigger value="current">Current Mentees</TabsTrigger>
-                  <TabsTrigger value="requests">Mentorship Requests</TabsTrigger>
-                  <TabsTrigger value="resources">Resources</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="current">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {mentees.map((mentee) => (
-                      <Card key={mentee.id} className="hover:shadow-lg transition-shadow">
-                        <CardContent className="p-6">
+              ) : (
+                <div className="space-y-6">
+                  {filteredMentorships?.map((request: MentorshipRequest) => (
+                    <Card key={request._id}>
+                      <CardContent className="p-6">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                           <div className="flex items-start space-x-4">
                             <Avatar className="h-12 w-12">
-                              <AvatarFallback>{mentee.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                              {typeof request.student !== 'string' && request.student.avatar ? (
+                                <AvatarImage src={request.student.avatar} alt={`${request.student.firstName} ${request.student.lastName}`} />
+                              ) : (
+                                <AvatarFallback>
+                                  {typeof request.student !== 'string' ? 
+                                    `${request.student.firstName?.charAt(0) || ''}${request.student.lastName?.charAt(0) || ''}` : 
+                                    'ST'}
+                                </AvatarFallback>
+                              )}
                             </Avatar>
                             <div>
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{mentee.name}</h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">{mentee.role}</p>
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                {typeof request.student !== 'string' ? 
+                                  `${request.student.firstName || ''} ${request.student.lastName || ''}` : 
+                                  'Unknown Student'}
+                              </h3>
                               <div className="flex items-center mt-1">
-                                <Badge variant="secondary" className="text-xs">
-                                  +{mentee.skillGrowth}% Skill Growth
+                                <Badge className={
+                                  request.status === 'pending' 
+                                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' 
+                                    : request.status === 'accepted'
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                }>
+                                  {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                                 </Badge>
+                                <span className="text-xs text-gray-500 dark:text-gray-400 ml-3">
+                                  Requested on {formatDate(request.createdAt.toString())}
+                                </span>
                               </div>
                             </div>
                           </div>
                           
-                          <div className="mt-4 space-y-3">
-                            <div>
-                              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Goals</p>
-                              <ul className="text-sm text-gray-600 dark:text-gray-400 mt-1 list-disc list-inside">
-                                {mentee.goals.map((goal, index) => (
-                                  <li key={index}>{goal}</li>
-                                ))}
-                              </ul>
+                          {request.status === 'pending' && (
+                            <div className="flex mt-4 md:mt-0 space-x-3">
+                              <Button
+                                variant="outline"
+                                className="border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
+                                onClick={() => handleStatusChange(request._id, 'rejected')}
+                              >
+                                Decline
+                              </Button>
+                              <Button 
+                                className="bg-green-500 hover:bg-green-600 text-white"
+                                onClick={() => handleStatusChange(request._id, 'accepted')}
+                              >
+                                Accept
+                              </Button>
                             </div>
-                            <div>
-                              <div className="flex justify-between items-center mb-1">
-                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Progress</p>
-                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{mentee.progress}%</p>
-                              </div>
-                              <Progress value={mentee.progress} className="h-2" />
-                            </div>
-                            <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                              <Calendar className="h-4 w-4 mr-1" />
-                              Next Meeting: {mentee.nextMeeting}
-                            </div>
-                          </div>
+                          )}
                           
-                          <div className="mt-4 flex justify-between">
-                            <Button variant="outline" size="sm" className="flex items-center gap-1">
-                              <MessageSquare className="h-4 w-4" />
+                          {request.status === 'accepted' && (
+                            <Button className="mt-4 md:mt-0">
                               Message
                             </Button>
-                            <Button size="sm">View Details</Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="requests">
-                  <div className="space-y-6">
-                    {potentialMentees.map((mentee) => (
-                      <Card key={mentee.id}>
-                        <CardContent className="p-6">
-                          <div className="flex justify-between items-start">
-                            <div className="flex items-start space-x-4">
-                              <Avatar className="h-12 w-12">
-                                <AvatarFallback>{mentee.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{mentee.name}</h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">{mentee.role}</p>
-                                <div className="flex flex-wrap gap-2 mt-2">
-                                  {mentee.interests.map((interest, index) => (
-                                    <Badge key={index} variant="outline" className="text-xs">
-                                      {interest}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 flex items-center">
-                              <Star className="h-3 w-3 mr-1" fill="currentColor" />
-                              {mentee.skillMatch}% Match
-                            </Badge>
-                          </div>
+                          )}
                           
-                          <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
-                            <p className="text-sm text-gray-700 dark:text-gray-300">
-                              <span className="font-medium">Message: </span>
-                              {mentee.message}
-                            </p>
-                          </div>
-                          
-                          <div className="mt-4 flex justify-end gap-2">
-                            <Button variant="outline">Decline</Button>
-                            <Button>Accept Mentee</Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="resources">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Mentorship Resources</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {[
-                          {
-                            title: "Mentorship Guidelines",
-                            description: "Best practices and guidelines for effective mentorship",
-                            type: "PDF Guide"
-                          },
-                          {
-                            title: "Goal Setting Templates",
-                            description: "Templates to help set and track mentorship goals",
-                            type: "Templates"
-                          },
-                          {
-                            title: "Effective Feedback Techniques",
-                            description: "How to provide constructive feedback to mentees",
-                            type: "Video Course"
-                          },
-                          {
-                            title: "Mentorship Agreement",
-                            description: "Standard agreement defining mentor-mentee relationship",
-                            type: "Document"
-                          }
-                        ].map((resource, idx) => (
-                          <div key={idx} className="p-4 rounded-md border bg-white dark:bg-gray-800 dark:border-gray-700">
-                            <h3 className="font-medium text-gray-900 dark:text-white">{resource.title}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{resource.description}</p>
-                            <div className="flex items-center justify-between mt-3">
-                              <Badge variant="outline">{resource.type}</Badge>
-                              <Button variant="outline" size="sm">View</Button>
+                          {request.status === 'rejected' && (
+                            <Button 
+                              variant="outline" 
+                              className="mt-4 md:mt-0"
+                              onClick={() => handleStatusChange(request._id, 'accepted')}
+                            >
+                              Reconsider
+                            </Button>
+                          )}
+                        </div>
+                        
+                        <div className="mt-4">
+                          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Request Message:</h4>
+                          <p className="text-gray-600 dark:text-gray-400 text-sm bg-gray-50 dark:bg-gray-800 p-4 rounded-md">
+                            {request.message || "No message provided"}
+                          </p>
+                        </div>
+                        
+                        {typeof request.student !== 'string' && request.student.skills && request.student.skills.length > 0 && (
+                          <div className="mt-4">
+                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Skills:</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {request.student.skills.slice(0, 5).map((skill, index) => (
+                                <Badge key={index} variant="outline">{skill}</Badge>
+                              ))}
+                              {request.student.skills.length > 5 && (
+                                <Badge variant="outline">+{request.student.skills.length - 5} more</Badge>
+                              )}
                             </div>
                           </div>
-                        ))}
-                      </div>
-                      <div className="flex justify-center mt-4">
-                        <Button variant="outline">View All Resources</Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            </div>
-          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

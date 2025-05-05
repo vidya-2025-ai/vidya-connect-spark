@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import RecruiterSidebar from '@/components/dashboard/RecruiterSidebar';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter, Mail, Star, Bell, Download } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Select,
   SelectContent,
@@ -16,73 +17,83 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { useToast } from '@/hooks/use-toast';
+import candidateService, { CandidateFilters } from '@/services/api/candidateService';
 
 const Candidates = () => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
+  const [filters, setFilters] = useState<CandidateFilters>({
+    role: 'student',
+    page: 1,
+    limit: 20,
+  });
 
-  const candidates = [
-    {
-      id: 1,
-      name: "Alex Johnson",
-      role: "Software Engineer",
-      experience: "5 years",
-      skills: ["React", "Node.js", "TypeScript", "MongoDB"],
-      status: "Available",
-      education: "B.Tech in Computer Science",
-      skillAssessmentScore: 92,
-      certifications: ["AWS Certified Developer", "MongoDB Professional"],
-      mentorshipInterest: true,
-    },
-    {
-      id: 2,
-      name: "Sarah Williams",
-      role: "Product Manager",
-      experience: "7 years",
-      skills: ["Product Strategy", "Agile", "User Research", "Data Analysis"],
-      status: "In Process",
-      education: "MBA",
-      skillAssessmentScore: 88,
-      certifications: ["Certified Scrum Product Owner"],
-      mentorshipInterest: true,
-    },
-    {
-      id: 3,
-      name: "Michael Brown",
-      role: "UI/UX Designer",
-      experience: "4 years",
-      skills: ["Figma", "Adobe XD", "User Testing", "Wireframing"],
-      status: "Hired",
-      education: "BFA in Graphic Design",
-      skillAssessmentScore: 85,
-      certifications: ["Adobe Certified Expert"],
-      mentorshipInterest: false,
-    },
-    {
-      id: 4,
-      name: "Emily Chen",
-      role: "Data Scientist",
-      experience: "3 years",
-      skills: ["Python", "ML/AI", "TensorFlow", "SQL"],
-      status: "Available",
-      education: "MS in Data Science",
-      skillAssessmentScore: 96,
-      certifications: ["TensorFlow Developer Certificate", "SQL Expert"],
-      mentorshipInterest: true,
-    },
-    {
-      id: 5,
-      name: "David Kim",
-      role: "Marketing Specialist",
-      experience: "6 years",
-      skills: ["Content Strategy", "SEO", "Social Media", "Analytics"],
-      status: "In Process",
-      education: "BA in Marketing",
-      skillAssessmentScore: 90,
-      certifications: ["Google Analytics Certified", "HubSpot Certified"],
-      mentorshipInterest: true,
+  // Selected filters state
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
+  const [experienceLevel, setExperienceLevel] = useState<string>('');
+  const [highScoreOnly, setHighScoreOnly] = useState(false);
+  const [hasCertifications, setHasCertifications] = useState(false);
+  const [mentorInterest, setMentorInterest] = useState(false);
+
+  // Fetch candidates
+  const {
+    data: candidates,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ['candidates', filters],
+    queryFn: () => candidateService.searchCandidates(filters),
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Could not load candidates. Please try again.",
+        variant: "destructive"
+      });
     }
-  ];
+  });
+
+  const handleSearch = () => {
+    setFilters(prev => ({
+      ...prev,
+      name: searchTerm || undefined,
+      page: 1,
+    }));
+  }
+
+  const handleApplyFilters = () => {
+    setFilters(prev => ({
+      ...prev,
+      skills: selectedSkills.length > 0 ? selectedSkills : undefined,
+      experienceLevel: experienceLevel || undefined,
+      page: 1,
+    }));
+  }
+
+  const handleExportCandidates = () => {
+    toast({
+      title: "Export Started",
+      description: "Your candidates data is being prepared for download.",
+    });
+  }
+
+  const handleViewProfile = (candidateId: string) => {
+    // Navigate to candidate profile (implementation will depend on your routing)
+    window.location.href = `/recruiter/candidates/${candidateId}`;
+  }
+
+  const handleContactCandidate = (candidateId: string) => {
+    toast({
+      title: "Contact Initiated",
+      description: "You can now message this candidate.",
+    });
+  }
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('');
+  }
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
@@ -103,6 +114,7 @@ const Candidates = () => {
                     type="search"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                   />
                 </div>
               </div>
@@ -142,18 +154,22 @@ const Candidates = () => {
                     <Filter className="h-4 w-4" />
                     Filter
                   </Button>
-                  <Button variant="outline" className="flex items-center gap-2">
+                  <Button variant="outline" className="flex items-center gap-2" onClick={handleExportCandidates}>
                     <Download className="h-4 w-4" />
                     Export
                   </Button>
-                  <Select defaultValue="skillscore">
+                  <Select 
+                    defaultValue="lastActive" 
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, sortBy: value }))}
+                  >
                     <SelectTrigger className="w-[160px]">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="skillscore">Skill Score</SelectItem>
-                      <SelectItem value="experience">Experience</SelectItem>
-                      <SelectItem value="alphabetical">Name (A-Z)</SelectItem>
+                      <SelectItem value="lastActive">Last Active</SelectItem>
+                      <SelectItem value="profileCompleteness">Profile Completeness</SelectItem>
+                      <SelectItem value="yearsOfExperience">Experience</SelectItem>
+                      <SelectItem value="firstName">Name (A-Z)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -164,11 +180,21 @@ const Candidates = () => {
                   <CardContent className="p-4">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                       <div>
-                        <h3 className="mb-3 font-medium text-gray-900 dark:text-white">Candidate Status</h3>
+                        <h3 className="mb-3 font-medium text-gray-900 dark:text-white">Availability</h3>
                         <div className="space-y-2">
-                          {["Available", "In Process", "Hired"].map((status) => (
+                          {["Immediate", "2 Weeks", "Month", "Negotiable"].map((status) => (
                             <div key={status} className="flex items-center space-x-2">
-                              <Checkbox id={`status-${status}`} />
+                              <Checkbox 
+                                id={`status-${status}`} 
+                                checked={selectedStatus.includes(status)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedStatus([...selectedStatus, status]);
+                                  } else {
+                                    setSelectedStatus(selectedStatus.filter(s => s !== status));
+                                  }
+                                }}
+                              />
                               <Label htmlFor={`status-${status}`} className="text-sm">{status}</Label>
                             </div>
                           ))}
@@ -179,7 +205,17 @@ const Candidates = () => {
                         <div className="space-y-2">
                           {["React", "Python", "Product Management", "UX Design", "Data Science", "Marketing"].map((skill) => (
                             <div key={skill} className="flex items-center space-x-2">
-                              <Checkbox id={`skill-${skill}`} />
+                              <Checkbox 
+                                id={`skill-${skill}`} 
+                                checked={selectedSkills.includes(skill)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedSkills([...selectedSkills, skill]);
+                                  } else {
+                                    setSelectedSkills(selectedSkills.filter(s => s !== skill));
+                                  }
+                                }}
+                              />
                               <Label htmlFor={`skill-${skill}`} className="text-sm">{skill}</Label>
                             </div>
                           ))}
@@ -187,12 +223,15 @@ const Candidates = () => {
                       </div>
                       <div>
                         <h3 className="mb-3 font-medium text-gray-900 dark:text-white">Experience Level</h3>
-                        <Select>
+                        <Select 
+                          value={experienceLevel} 
+                          onValueChange={setExperienceLevel}
+                        >
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder="Select experience" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All experience levels</SelectItem>
+                            <SelectItem value="">All experience levels</SelectItem>
                             <SelectItem value="entry">Entry (0-2 years)</SelectItem>
                             <SelectItem value="mid">Mid (3-5 years)</SelectItem>
                             <SelectItem value="senior">Senior (6+ years)</SelectItem>
@@ -203,20 +242,32 @@ const Candidates = () => {
                         <h3 className="mb-3 font-medium text-gray-900 dark:text-white">Additional Filters</h3>
                         <div className="space-y-2">
                           <div className="flex items-center space-x-2">
-                            <Checkbox id="mentor" />
+                            <Checkbox 
+                              id="mentor" 
+                              checked={mentorInterest}
+                              onCheckedChange={(checked) => setMentorInterest(!!checked)}
+                            />
                             <Label htmlFor="mentor" className="text-sm">Interested in Mentoring</Label>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Checkbox id="certifications" />
+                            <Checkbox 
+                              id="certifications" 
+                              checked={hasCertifications}
+                              onCheckedChange={(checked) => setHasCertifications(!!checked)}
+                            />
                             <Label htmlFor="certifications" className="text-sm">Has Certifications</Label>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Checkbox id="highscore" />
-                            <Label htmlFor="highscore" className="text-sm">Skill Score 90%+</Label>
+                            <Checkbox 
+                              id="highscore" 
+                              checked={highScoreOnly}
+                              onCheckedChange={(checked) => setHighScoreOnly(!!checked)}
+                            />
+                            <Label htmlFor="highscore" className="text-sm">Profile Completeness 90%+</Label>
                           </div>
                         </div>
                         <div className="mt-4">
-                          <Button className="w-full">Apply Filters</Button>
+                          <Button className="w-full" onClick={handleApplyFilters}>Apply Filters</Button>
                         </div>
                       </div>
                     </div>
@@ -224,77 +275,100 @@ const Candidates = () => {
                 </Card>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {candidates.map((candidate) => (
-                  <Card key={candidate.id} className="hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-start space-x-3">
-                          <Avatar className="h-12 w-12">
-                            <AvatarFallback>{candidate.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{candidate.name}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{candidate.role}</p>
-                          </div>
-                        </div>
-                        <Badge
-                          variant={
-                            candidate.status === "Available"
-                              ? "default"
-                              : candidate.status === "In Process"
-                              ? "secondary"
-                              : "outline"
-                          }
-                        >
-                          {candidate.status}
-                        </Badge>
-                      </div>
-                      <div className="mt-4 space-y-3">
-                        <div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Experience: {candidate.experience}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Education: {candidate.education}</p>
-                        </div>
-                        <div>
-                          <div className="flex items-center mb-2">
-                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Skills Assessment</p>
-                            <Badge className="ml-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 flex items-center">
-                              <Star className="h-3 w-3 mr-1" fill="currentColor" />
-                              {candidate.skillAssessmentScore}%
-                            </Badge>
-                          </div>
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {candidate.skills.map((skill, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {skill}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                        {candidate.certifications.length > 0 && (
-                          <div>
-                            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Certifications</p>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {candidate.certifications.map((cert, index) => (
-                                <Badge key={index} variant="secondary" className="text-xs">
-                                  {cert}
-                                </Badge>
-                              ))}
+              {isLoading ? (
+                <div className="flex justify-center items-center h-64">
+                  <p className="text-gray-500 dark:text-gray-400">Loading candidates...</p>
+                </div>
+              ) : isError ? (
+                <div className="flex justify-center items-center h-64">
+                  <p className="text-red-500">Error loading candidates. Please try again.</p>
+                </div>
+              ) : candidates && candidates.length === 0 ? (
+                <div className="flex justify-center items-center h-64">
+                  <p className="text-gray-500 dark:text-gray-400">No candidates match your filters.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {candidates?.map((candidate) => (
+                    <Card key={candidate.id} className="hover:shadow-lg transition-shadow">
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-start space-x-3">
+                            <Avatar>
+                              {candidate.avatar ? (
+                                <AvatarImage src={candidate.avatar} alt={candidate.firstName} />
+                              ) : (
+                                <AvatarFallback>{getInitials(`${candidate.firstName} ${candidate.lastName}`)}</AvatarFallback>
+                              )}
+                            </Avatar>
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                {candidate.firstName} {candidate.lastName}
+                              </h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">{candidate.jobTitle || 'Student'}</p>
                             </div>
                           </div>
-                        )}
-                      </div>
-                      <div className="mt-4 flex justify-between">
-                        <Button variant="outline" size="sm" className="flex items-center gap-2">
-                          <Mail className="h-4 w-4" />
-                          Contact
-                        </Button>
-                        <Button size="sm">View Profile</Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                          <Badge
+                            variant="default"
+                          >
+                            {candidate.availability || 'Available'}
+                          </Badge>
+                        </div>
+                        <div className="mt-4 space-y-3">
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              Experience: {candidate.yearsOfExperience || 0} years
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              Education: {candidate.education && candidate.education.length > 0 
+                                ? `${candidate.education[0].degree} in ${candidate.education[0].field}`
+                                : 'Not specified'}
+                            </p>
+                          </div>
+                          <div>
+                            <div className="flex items-center mb-2">
+                              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Profile Completeness</p>
+                              <Badge className="ml-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 flex items-center">
+                                <Star className="h-3 w-3 mr-1" fill="currentColor" />
+                                {candidate.profileCompleteness || 0}%
+                              </Badge>
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {(candidate.skills || []).slice(0, 4).map((skill, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {skill}
+                                </Badge>
+                              ))}
+                              {(candidate.skills || []).length > 4 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{(candidate.skills || []).length - 4} more
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-4 flex justify-between">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex items-center gap-2"
+                            onClick={() => handleContactCandidate(candidate.id)}
+                          >
+                            <Mail className="h-4 w-4" />
+                            Contact
+                          </Button>
+                          <Button 
+                            size="sm"
+                            onClick={() => handleViewProfile(candidate.id)}
+                          >
+                            View Profile
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

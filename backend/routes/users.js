@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { Skill, UserSkill } = require('../models/Skill');
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, '../uploads/avatars');
@@ -236,7 +237,7 @@ router.put('/password', auth, async (req, res) => {
 // Get users for mentorship (for students) or talent search (for recruiters)
 router.get('/search', auth, async (req, res) => {
   try {
-    const { role, skills, name } = req.query;
+    const { role, skills, name, experienceLevel, education, location } = req.query;
     
     // Build query
     const query = {};
@@ -261,10 +262,35 @@ router.get('/search', auth, async (req, res) => {
       query.skills = { $in: skillsArray };
     }
     
-    // Find users
+    // Filter by experience level
+    if (experienceLevel) {
+      if (experienceLevel === 'entry') {
+        query.yearsOfExperience = { $lte: 2 };
+      } else if (experienceLevel === 'mid') {
+        query.yearsOfExperience = { $gt: 2, $lte: 5 };
+      } else if (experienceLevel === 'senior') {
+        query.yearsOfExperience = { $gt: 5 };
+      }
+    }
+    
+    // Filter by location
+    if (location) {
+      query.location = new RegExp(location, 'i');
+    }
+    
+    // Find users with pagination
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+    
     const users = await User.find(query)
       .select('-password')
-      .limit(20);
+      .skip(skip)
+      .limit(limit)
+      .sort({ lastActive: -1 });
+    
+    // Get total count for pagination
+    const total = await User.countDocuments(query);
     
     // Format the response
     const formattedUsers = users.map(user => ({
@@ -274,12 +300,100 @@ router.get('/search', auth, async (req, res) => {
       role: user.role,
       organization: user.organization,
       jobTitle: user.jobTitle,
-      skills: user.skills,
+      skills: user.skills || [],
       bio: user.bio,
-      avatar: user.avatar
+      avatar: user.avatar,
+      location: user.location,
+      yearsOfExperience: user.yearsOfExperience,
+      education: user.education || [],
+      availability: user.availability,
+      profileCompleteness: user.profileCompleteness || 0
     }));
     
-    res.json(formattedUsers);
+    res.json({
+      candidates: formattedUsers,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get user skills assessment data
+router.get('/:id/skills', auth, async (req, res) => {
+  try {
+    // Verify the requester is a recruiter
+    if (req.user.role !== 'recruiter') {
+      return res.status(403).json({ message: 'Not authorized to view skill assessments' });
+    }
+    
+    const { id } = req.params;
+    
+    // Get user skills with assessments
+    const userSkills = await UserSkill.find({ user: id })
+      .populate('skill')
+      .sort({ level: -1 });
+    
+    if (!userSkills) {
+      return res.json([]);
+    }
+    
+    // Format the response
+    const formattedSkills = userSkills.map(userSkill => ({
+      id: userSkill._id,
+      name: userSkill.skill.name,
+      category: userSkill.skill.category,
+      level: userSkill.level,
+      assessments: userSkill.assessments || []
+    }));
+    
+    res.json(formattedSkills);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get candidate profile details
+router.get('/:id/profile', auth, async (req, res) => {
+  try {
+    // Verify the requester is a recruiter
+    if (req.user.role !== 'recruiter') {
+      return res.status(403).json({ message: 'Not authorized to view candidate profile' });
+    }
+    
+    const { id } = req.params;
+    
+    // Get user profile
+    const user = await User.findById(id).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json({
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      skills: user.skills || [],
+      bio: user.bio || '',
+      avatar: user.avatar,
+      location: user.location || '',
+      education: user.education || [],
+      experience: user.experience || [],
+      socialLinks: user.socialLinks || {},
+      yearsOfExperience: user.yearsOfExperience || 0,
+      availability: user.availability || 'Negotiable',
+      careerInterests: user.careerInterests || []
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

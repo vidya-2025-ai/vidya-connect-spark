@@ -1,279 +1,332 @@
 
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import RecruiterSidebar from '@/components/dashboard/RecruiterSidebar';
-import MobileMenuToggle from '@/components/layout/MobileMenuToggle';
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bell, Search, Briefcase, Users, Calendar, Star, FileText } from 'lucide-react';
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useToast } from '@/hooks/use-toast';
-import { opportunityService } from '@/services/api/exportServices';
-import { Application, Opportunity } from '@/services/api/types';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Briefcase, Mail, CalendarDays, Users, TrendingUp, BookOpen, BarChart2 } from "lucide-react";
+import RecruiterSidebar from '@/components/dashboard/RecruiterSidebar';
+import dashboardService from '@/services/api/dashboardService';
+import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user } = useAuth();
   const { toast } = useToast();
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
+  
   // Fetch dashboard statistics
-  const { data: dashboardStats = { activeJobs: 0, totalApplications: 0, interviewsScheduled: 0, mentorshipMatches: 0 }, 
-          isLoading: isLoadingStats } = useQuery({
+  const {
+    data: dashboardStats,
+    isLoading: statsLoading,
+    error: statsError
+  } = useQuery({
     queryKey: ['dashboardStats'],
-    queryFn: () => opportunityService.getDashboardStats(),
-    onError: (error: any) => {
-      console.error('Error fetching dashboard stats:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load dashboard statistics",
-        variant: "destructive"
-      });
+    queryFn: dashboardService.getRecruiterStats,
+    meta: {
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Could not load dashboard statistics",
+          variant: "destructive"
+        });
+      }
     }
   });
 
   // Fetch recent applications
-  const { data: recentApplications = [], isLoading: isLoadingApplications } = useQuery({
+  const {
+    data: recentApplications,
+    isLoading: applicationsLoading,
+    error: applicationsError
+  } = useQuery({
     queryKey: ['recentApplications'],
-    queryFn: () => opportunityService.getRecentApplications(3),
-    onError: (error: any) => {
-      console.error('Error fetching recent applications:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load recent applications",
-        variant: "destructive"
-      });
+    queryFn: () => dashboardService.getRecentApplications(5),
+    meta: {
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Could not load recent applications",
+          variant: "destructive"
+        });
+      }
     }
   });
 
-  const stats = [
-    { 
-      title: 'Active Jobs',
-      value: isLoadingStats ? '...' : dashboardStats.activeJobs.toString(), 
-      change: '+2', 
-      status: 'increase', 
-      icon: Briefcase, 
-      color: 'bg-blue-500' 
-    },
-    { 
-      title: 'Total Applications', 
-      value: isLoadingStats ? '...' : dashboardStats.totalApplications.toString(), 
-      change: '+15', 
-      status: 'increase', 
-      icon: FileText, 
-      color: 'bg-purple-500' 
-    },
-    { 
-      title: 'Interviews Scheduled', 
-      value: isLoadingStats ? '...' : dashboardStats.interviewsScheduled.toString(), 
-      change: '+3', 
-      status: 'increase', 
-      icon: Calendar, 
-      color: 'bg-amber-500' 
-    },
-    { 
-      title: 'Mentorship Matches', 
-      value: isLoadingStats ? '...' : dashboardStats.mentorshipMatches.toString(), 
-      change: '+1', 
-      status: 'increase', 
-      icon: Star, 
-      color: 'bg-green-500' 
-    },
-  ];
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
 
-  const upcomingEvents = [
-    {
-      id: 1, 
-      title: "Technical Interview",
-      time: "Today, 2:00 PM",
-      candidate: "Alex Johnson"
-    },
-    {
-      id: 2,
-      title: "Corporate Challenge Launch",
-      time: "Tomorrow, 10:00 AM",
-      type: "Event"
-    },
-    {
-      id: 3,
-      title: "Mentorship Session",
-      time: "Apr 30, 3:30 PM",
-      candidate: "Emily Chen"
-    }
-  ];
+  const getInitials = (name: string) => {
+    if (!name) return '';
+    return name.split(' ').map(n => n[0]).join('');
+  };
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
-      <RecruiterSidebar 
-        isMobileMenuOpen={isMobileMenuOpen} 
-        setIsMobileMenuOpen={setIsMobileMenuOpen} 
-      />
+      <RecruiterSidebar />
       
-      {!isMobileMenuOpen && (
-        <MobileMenuToggle onClick={toggleMobileMenu} />
-      )}
-      
-      <div className="flex flex-col w-0 flex-1 overflow-hidden">
-        {/* Top bar */}
-        <div className="relative z-10 flex-shrink-0 flex h-16 bg-white shadow-sm dark:bg-gray-800 dark:border-gray-700 border-b border-gray-200">
-          <div className="flex-1 px-4 flex justify-between">
-            <div className="flex-1 flex">
-              <div className="w-full flex md:ml-0">
-                <div className="relative w-full text-gray-400 focus-within:text-gray-600">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3">
-                    <Search className="h-4 w-4" aria-hidden="true" />
-                  </div>
-                  <Input
-                    className="block w-full h-full pl-10 pr-3 py-2 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
-                    placeholder="Search candidates, jobs..."
-                    type="search"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="ml-4 flex items-center md:ml-6 space-x-3">
-              <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-500">
-                <span className="sr-only">View notifications</span>
-                <Bell className="h-5 w-5" aria-hidden="true" />
-              </Button>
-
-              <div className="relative">
-                <div className="flex items-center space-x-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback>
-                      {user?.firstName && user?.lastName 
-                        ? `${user.firstName[0]}${user.lastName[0]}` 
-                        : 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-              </div>
-            </div>
+      <div className="flex flex-col w-0 flex-1 overflow-auto">
+        <div className="px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Recruiter Dashboard</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Overview of your recruitment activities
+            </p>
           </div>
-        </div>
-
-        {/* Main content */}
-        <main className="flex-1 relative overflow-y-auto focus:outline-none">
-          <div className="py-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Welcome back{user?.firstName ? `, ${user.firstName}!` : "!"} Here's an overview of your recruitment activities.
-              </p>
-            </div>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-              <div className="py-6">
-                {/* Stats cards */}
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                  {stats.map((stat, index) => (
-                    <Card key={index} className="border border-gray-200 dark:border-gray-700 overflow-hidden">
-                      <div className={`h-1 w-full ${stat.color}`}></div>
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
+          
+          {/* Stats Section */}
+          <div className="grid gap-6 mb-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardContent className="p-6 flex items-start">
+                <div className="rounded-full p-3 bg-blue-100 dark:bg-blue-900 mr-4">
+                  <Briefcase className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Jobs</p>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                    {statsLoading ? '...' : statsError ? 'Error' : dashboardStats?.activeJobs || 0}
+                  </h3>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6 flex items-start">
+                <div className="rounded-full p-3 bg-green-100 dark:bg-green-900 mr-4">
+                  <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Applications</p>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                    {statsLoading ? '...' : statsError ? 'Error' : dashboardStats?.totalApplications || 0}
+                  </h3>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6 flex items-start">
+                <div className="rounded-full p-3 bg-purple-100 dark:bg-purple-900 mr-4">
+                  <CalendarDays className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Interviews Scheduled</p>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                    {statsLoading ? '...' : statsError ? 'Error' : dashboardStats?.interviewsScheduled || 0}
+                  </h3>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6 flex items-start">
+                <div className="rounded-full p-3 bg-amber-100 dark:bg-amber-900 mr-4">
+                  <BookOpen className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Mentorship Matches</p>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                    {statsLoading ? '...' : statsError ? 'Error' : dashboardStats?.mentorshipMatches || 0}
+                  </h3>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Recent Applications */}
+          <div className="grid gap-6 mb-8 grid-cols-1 lg:grid-cols-3">
+            <Card className="col-span-2">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl">Recent Applications</CardTitle>
+                <CardDescription>
+                  Latest candidates who applied to your job postings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[400px] pr-4">
+                  {applicationsLoading ? (
+                    <div className="py-4 text-center text-gray-500">Loading applications...</div>
+                  ) : applicationsError ? (
+                    <div className="py-4 text-center text-red-500">Error loading applications</div>
+                  ) : recentApplications?.length === 0 ? (
+                    <div className="py-4 text-center text-gray-500">No recent applications</div>
+                  ) : (
+                    <div className="space-y-4">
+                      {recentApplications?.map((application: any, index: number) => (
+                        <div key={application._id || index} className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0">
                           <div className="flex items-center">
-                            <div className={`rounded-md p-2 ${stat.color} bg-opacity-15 dark:bg-opacity-30 mr-4`}>
-                              <stat.icon className={`h-5 w-5 ${stat.color} text-white`} />
+                            <Avatar className="h-10 w-10 mr-3">
+                              {application.student && application.student.avatar ? (
+                                <AvatarImage src={application.student.avatar} />
+                              ) : (
+                                <AvatarFallback>
+                                  {application.student ? getInitials(`${application.student.firstName} ${application.student.lastName}`) : 'U'}
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white">
+                                {application.student ? `${application.student.firstName} ${application.student.lastName}` : 'Unknown Applicant'}
+                              </p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                Applied for {application.opportunity ? application.opportunity.title : 'Unknown Position'}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-500">
+                                {formatDate(application.appliedDate)}
+                              </p>
                             </div>
-                            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">{stat.title}</h3>
                           </div>
-                          <Badge className="ml-2">
-                            {stat.change}
-                          </Badge>
-                        </div>
-                        <p className="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">{stat.value}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-                  {/* Recent applications */}
-                  <Card className="lg:col-span-2 border border-gray-200 dark:border-gray-700 shadow-sm">
-                    <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Recent Applications</h3>
-                    </div>
-                    <CardContent className="p-0">
-                      <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                        {isLoadingApplications ? (
-                          <div className="p-6 text-center text-gray-500 dark:text-gray-400">Loading recent applications...</div>
-                        ) : recentApplications.length > 0 ? (
-                          recentApplications.map((application: any) => (
-                            <div 
-                              key={application._id}
-                              className="flex items-center justify-between p-6 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                          <div className="flex items-center">
+                            <Badge className={`mr-3 ${
+                              application.status === 'Pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' :
+                              application.status === 'Shortlisted' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
+                              application.status === 'Interview' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' :
+                              application.status === 'Accepted' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
+                              application.status === 'Rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' :
+                              'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
+                            }`}>
+                              {application.status}
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex items-center gap-1"
+                              asChild
                             >
-                              <div>
-                                <h4 className="font-medium text-gray-900 dark:text-white">
-                                  {application.opportunity?.title || "Unknown Position"}
-                                </h4>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  {application.student?.firstName} {application.student?.lastName || "Unknown Candidate"}
-                                </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                                  {new Date(application.appliedDate).toLocaleDateString()}
-                                </p>
-                              </div>
-                              <div className="flex items-center space-x-4">
-                                {application.skillMatch && (
-                                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 flex items-center">
-                                    <Star className="h-3 w-3 mr-1" fill="currentColor" />
-                                    {application.skillMatch}% Match
-                                  </Badge>
-                                )}
-                                <Badge>{application.status}</Badge>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="p-6 text-center text-gray-500 dark:text-gray-400">No recent applications</div>
-                        )}
-                      </div>
-                      <div className="p-6 border-t border-gray-200 dark:border-gray-700">
-                        <Button variant="outline" className="w-full" onClick={() => window.location.href = '/recruiter/applications'}>
-                          View All Applications
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  {/* Upcoming events */}
-                  <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
-                    <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Upcoming Events</h3>
-                    </div>
-                    <CardContent className="p-0">
-                      <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                        {upcomingEvents.map((event) => (
-                          <div 
-                            key={event.id}
-                            className="p-6 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                          >
-                            <h4 className="font-medium text-gray-900 dark:text-white">{event.title}</h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{event.time}</p>
-                            {event.candidate && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">With: {event.candidate}</p>
-                            )}
+                              <a href={`/recruiter/applications/${application._id}`}>
+                                <Mail className="h-3 w-3" />
+                                <span className="sr-only sm:not-sr-only sm:ml-1 text-xs">Review</span>
+                              </a>
+                            </Button>
                           </div>
-                        ))}
-                      </div>
-                      <div className="p-6 border-t border-gray-200 dark:border-gray-700">
-                        <Button variant="outline" className="w-full" onClick={() => window.location.href = '/recruiter/schedule'}>
-                          View Calendar
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+                <div className="mt-4 text-center">
+                  <Button variant="outline" asChild>
+                    <a href="/recruiter/applications">View All Applications</a>
+                  </Button>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl">Activity Summary</CardTitle>
+                <CardDescription>
+                  Your recent engagement metrics
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-8">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Job Listings Performance</h4>
+                      <BarChart2 className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-gray-600 dark:text-gray-400">Views</span>
+                          <span className="font-medium text-gray-900 dark:text-white">842</span>
+                        </div>
+                        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 rounded-full" style={{ width: '70%' }}></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-gray-600 dark:text-gray-400">Applications</span>
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {statsLoading ? '...' : statsError ? 'Error' : dashboardStats?.totalApplications || 0}
+                          </span>
+                        </div>
+                        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div className="h-full bg-green-500 rounded-full" style={{ width: '45%' }}></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-gray-600 dark:text-gray-400">Interview Rate</span>
+                          <span className="font-medium text-gray-900 dark:text-white">32%</span>
+                        </div>
+                        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div className="h-full bg-purple-500 rounded-full" style={{ width: '32%' }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Upcoming Tasks</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-start">
+                        <div className="h-4 w-4 rounded-full border-2 border-blue-500 mt-1 mr-2"></div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">Review pending applications</p>
+                          <p className="text-xs text-gray-500">Today</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start">
+                        <div className="h-4 w-4 rounded-full border-2 border-blue-500 mt-1 mr-2"></div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">Schedule interviews</p>
+                          <p className="text-xs text-gray-500">Tomorrow</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start">
+                        <div className="h-4 w-4 rounded-full border-2 border-gray-300 mt-1 mr-2"></div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">Post new internship opening</p>
+                          <p className="text-xs text-gray-500">This week</p>
+                        </div>
+                      </div>
+                    </div>
+                    <Button variant="outline" className="w-full mt-4">View All Tasks</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </main>
+          
+          {/* Quick Links */}
+          <Card className="mb-8">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xl">Quick Links</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Button variant="outline" className="h-auto flex-col py-4" asChild>
+                  <a href="/recruiter/post-internship">
+                    <Briefcase className="h-5 w-5 mb-2" />
+                    <span>Post New Job</span>
+                  </a>
+                </Button>
+                <Button variant="outline" className="h-auto flex-col py-4" asChild>
+                  <a href="/recruiter/candidates">
+                    <Users className="h-5 w-5 mb-2" />
+                    <span>Browse Candidates</span>
+                  </a>
+                </Button>
+                <Button variant="outline" className="h-auto flex-col py-4" asChild>
+                  <a href="/recruiter/applications">
+                    <Mail className="h-5 w-5 mb-2" />
+                    <span>Review Applications</span>
+                  </a>
+                </Button>
+                <Button variant="outline" className="h-auto flex-col py-4" asChild>
+                  <a href="/recruiter/mentorship">
+                    <BookOpen className="h-5 w-5 mb-2" />
+                    <span>Mentorship</span>
+                  </a>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

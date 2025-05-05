@@ -1,14 +1,16 @@
 
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import RecruiterSidebar from '@/components/dashboard/RecruiterSidebar';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Bell, Star, BookOpen, GraduationCap, Settings, Sliders } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Search, Filter, Bell, Star, Sliders } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from '@/hooks/use-toast';
 import {
   Select,
   SelectContent,
@@ -16,8 +18,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import candidateService, { CandidateFilters } from '@/services/api/candidateService';
+import { User } from '@/services/api/types';
 
 const TalentSearch = () => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("search");
@@ -29,51 +34,38 @@ const TalentSearch = () => {
     keywordWeight: "medium",
     resumeFormat: "any"
   });
-  
-  const searchResults = [
-    {
-      id: 1,
-      name: "Alex Johnson",
-      role: "Software Engineer",
-      university: "MIT",
-      skills: ["React", "Node.js", "TypeScript", "MongoDB"],
-      skillScore: 92,
-      atsScore: 85,
-      achievements: ["Top 10% in AI Challenge", "3 Industry Certifications"]
-    },
-    {
-      id: 2,
-      name: "Sarah Williams",
-      role: "Product Manager",
-      university: "Stanford",
-      skills: ["Product Strategy", "Agile", "User Research", "Data Analysis"],
-      skillScore: 88,
-      atsScore: 78,
-      achievements: ["Led 5+ Product Launches", "Product Management Certification"]
-    },
-    {
-      id: 3,
-      name: "Michael Brown",
-      role: "UI/UX Designer",
-      university: "RISD",
-      skills: ["Figma", "Adobe XD", "User Testing", "Wireframing"],
-      skillScore: 85,
-      atsScore: 72,
-      achievements: ["Design Excellence Award", "UX Research Certificate"]
-    },
-    {
-      id: 4,
-      name: "Emily Chen",
-      role: "Data Scientist",
-      university: "UC Berkeley",
-      skills: ["Python", "ML/AI", "TensorFlow", "SQL"],
-      skillScore: 96,
-      atsScore: 91,
-      achievements: ["ML Competition Winner", "Published Research Paper"]
-    }
-  ];
 
-  const handleAtsParameterChange = (param, value) => {
+  // Search filters
+  const [filters, setFilters] = useState<CandidateFilters>({
+    role: 'student',
+    page: 1,
+    limit: 20,
+    sortBy: 'profileCompleteness',
+    sortOrder: 'desc'
+  });
+  
+  // Fetch candidates
+  const {
+    data: candidates,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ['talentSearch', filters],
+    queryFn: () => candidateService.searchCandidates(filters),
+    meta: {
+      onSettled: (data, error) => {
+        if (error) {
+          toast({
+            title: "Error",
+            description: "Could not load candidates. Please try again.",
+            variant: "destructive"
+          });
+        }
+      }
+    }
+  });
+
+  const handleAtsParameterChange = (param: string, value: string) => {
     setAtsParameters(prev => ({
       ...prev,
       [param]: value
@@ -81,9 +73,59 @@ const TalentSearch = () => {
   };
 
   const applyATSParameters = () => {
-    // In a real app, this would filter candidates based on ATS parameters
-    console.log("Applying ATS parameters:", atsParameters);
+    // Convert ATS parameters to search filters
+    const requiredSkillsArray = atsParameters.requiredSkills
+      .split('\n')
+      .map(skill => skill.trim())
+      .filter(skill => skill.length > 0);
+    
+    setFilters(prev => ({
+      ...prev,
+      skills: requiredSkillsArray,
+      experienceLevel: atsParameters.experienceLevel !== 'any' ? atsParameters.experienceLevel : undefined
+    }));
+    
     setActiveTab("search");
+    
+    toast({
+      title: "ATS Parameters Applied",
+      description: "Candidates are now filtered based on your ATS criteria."
+    });
+  };
+
+  const handleSearch = () => {
+    setFilters(prev => ({
+      ...prev,
+      name: searchTerm || undefined,
+      page: 1
+    }));
+  };
+
+  const getAtsScore = (candidate: User) => {
+    // Calculate ATS score based on profile completeness and skill match
+    // This is a simplified version
+    const profileScore = candidate.profileCompleteness || 0;
+    
+    // Check required skills match
+    const requiredSkills = atsParameters.requiredSkills
+      .split('\n')
+      .map(skill => skill.trim())
+      .filter(skill => skill.length > 0);
+    
+    const candidateSkills = candidate.skills || [];
+    
+    let skillMatchScore = 0;
+    if (requiredSkills.length > 0) {
+      const matchingSkills = requiredSkills.filter(skill => 
+        candidateSkills.some(cs => cs.toLowerCase().includes(skill.toLowerCase()))
+      );
+      skillMatchScore = (matchingSkills.length / requiredSkills.length) * 100;
+    } else {
+      skillMatchScore = 60; // Default if no skills specified
+    }
+    
+    // Combine scores (weighted average)
+    return Math.round((profileScore * 0.4) + (skillMatchScore * 0.6));
   };
 
   return (
@@ -105,6 +147,7 @@ const TalentSearch = () => {
                     type="search"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                   />
                 </div>
               </div>
@@ -149,10 +192,6 @@ const TalentSearch = () => {
                     <Sliders className="h-4 w-4" />
                     ATS Parameters
                   </Button>
-                  <Button variant="outline" className="flex items-center gap-2" onClick={() => window.location.href = "/recruiter/assessment-stats"}>
-                    <GraduationCap className="h-4 w-4" />
-                    Assessment Stats
-                  </Button>
                 </div>
               </div>
 
@@ -172,96 +211,169 @@ const TalentSearch = () => {
                               <Input 
                                 placeholder="Enter skills (e.g., React, Python, UI Design)"
                                 className="pl-10"
+                                value={filters.skills?.join(', ') || ''}
+                                onChange={(e) => {
+                                  const skillsArray = e.target.value
+                                    .split(',')
+                                    .map(s => s.trim())
+                                    .filter(s => s.length > 0);
+                                  setFilters(prev => ({ ...prev, skills: skillsArray.length > 0 ? skillsArray : undefined }));
+                                }}
                               />
                               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                             </div>
                           </div>
                           <div>
-                            <h3 className="mb-2 font-medium text-gray-900 dark:text-white">Education Filter</h3>
+                            <h3 className="mb-2 font-medium text-gray-900 dark:text-white">Location Filter</h3>
                             <div className="relative">
                               <Input 
-                                placeholder="University, degree, or field of study"
+                                placeholder="City, state, or country"
                                 className="pl-10"
+                                value={filters.location || ''}
+                                onChange={(e) => setFilters(prev => ({ 
+                                  ...prev, 
+                                  location: e.target.value || undefined 
+                                }))}
                               />
-                              <GraduationCap className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                             </div>
                           </div>
                           <div>
                             <h3 className="mb-2 font-medium text-gray-900 dark:text-white">Experience Level</h3>
-                            <Select>
+                            <Select
+                              value={filters.experienceLevel || ''}
+                              onValueChange={(value) => setFilters(prev => ({ 
+                                ...prev, 
+                                experienceLevel: value || undefined 
+                              }))}
+                            >
                               <SelectTrigger>
                                 <SelectValue placeholder="Select experience level" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="entry">Entry Level</SelectItem>
-                                <SelectItem value="mid">Mid Level</SelectItem>
-                                <SelectItem value="senior">Senior Level</SelectItem>
-                                <SelectItem value="any">Any Level</SelectItem>
+                                <SelectItem value="">Any Level</SelectItem>
+                                <SelectItem value="entry">Entry Level (0-2 years)</SelectItem>
+                                <SelectItem value="mid">Mid Level (3-5 years)</SelectItem>
+                                <SelectItem value="senior">Senior Level (6+ years)</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                         </div>
                         <div className="mt-4 flex justify-end">
-                          <Button>Search Talent</Button>
+                          <Button onClick={handleSearch}>Search Talent</Button>
                         </div>
                       </CardContent>
                     </Card>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                    {searchResults.map((candidate) => (
-                      <Card key={candidate.id} className="border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
-                        <CardContent className="p-6">
-                          <div className="flex justify-between items-start">
-                            <div className="flex items-start space-x-4">
-                              <Avatar className="h-12 w-12">
-                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">{candidate.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                              </Avatar>
+                  {isLoading ? (
+                    <div className="flex justify-center items-center h-64">
+                      <p className="text-gray-500 dark:text-gray-400">Loading candidates...</p>
+                    </div>
+                  ) : isError ? (
+                    <div className="flex justify-center items-center h-64">
+                      <p className="text-red-500">Error loading candidates. Please try again.</p>
+                    </div>
+                  ) : candidates && candidates.length === 0 ? (
+                    <div className="flex justify-center items-center h-64">
+                      <p className="text-gray-500 dark:text-gray-400">No candidates match your filters.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {candidates?.map((candidate) => (
+                        <Card key={candidate.id} className="border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                          <CardContent className="p-6">
+                            <div className="flex justify-between items-start">
+                              <div className="flex items-start space-x-4">
+                                <Avatar className="h-12 w-12">
+                                  {candidate.avatar ? (
+                                    <AvatarImage src={candidate.avatar} alt={candidate.firstName} />
+                                  ) : (
+                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                                      {candidate.firstName.charAt(0)}{candidate.lastName.charAt(0)}
+                                    </AvatarFallback>
+                                  )}
+                                </Avatar>
+                                <div>
+                                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                    {candidate.firstName} {candidate.lastName}
+                                  </h3>
+                                  <p className="text-sm text-gray-600 dark:text-gray-400">{candidate.jobTitle || 'Student'}</p>
+                                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    {candidate.education && candidate.education.length > 0
+                                      ? candidate.education[0].institution
+                                      : candidate.location || 'Location not specified'}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end gap-1">
+                                <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 flex items-center">
+                                  <Star className="h-3 w-3 mr-1" fill="currentColor" />
+                                  {candidate.profileCompleteness || 0}% Match
+                                </Badge>
+                                <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 flex items-center">
+                                  <Sliders className="h-3 w-3 mr-1" />
+                                  {getAtsScore(candidate)}% ATS Score
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="mt-4 space-y-3">
                               <div>
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{candidate.name}</h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">{candidate.role}</p>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">{candidate.university}</p>
+                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Skills</p>
+                                <div className="flex flex-wrap gap-2 mt-1">
+                                  {(candidate.skills || []).slice(0, 6).map((skill, index) => (
+                                    <Badge key={index} variant="outline" className="text-xs">
+                                      {skill}
+                                    </Badge>
+                                  ))}
+                                  {(candidate.skills || []).length > 6 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{(candidate.skills || []).length - 6} more
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Experience</p>
+                                <ul className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                  {(candidate.experience || []).slice(0, 2).map((exp, index) => (
+                                    <li key={index} className="mb-1">
+                                      {exp.position} at {exp.company}
+                                    </li>
+                                  ))}
+                                  {candidate.experience && candidate.experience.length === 0 && (
+                                    <li>No experience listed</li>
+                                  )}
+                                </ul>
                               </div>
                             </div>
-                            <div className="flex flex-col items-end gap-1">
-                              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 flex items-center">
-                                <Star className="h-3 w-3 mr-1" fill="currentColor" />
-                                {candidate.skillScore}% Match
-                              </Badge>
-                              <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 flex items-center">
-                                <Settings className="h-3 w-3 mr-1" />
-                                {candidate.atsScore}% ATS Score
-                              </Badge>
+                            <div className="mt-4 flex justify-end gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => {
+                                  window.location.href = `/recruiter/candidates/${candidate.id}`;
+                                }}
+                              >
+                                View Profile
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                onClick={() => {
+                                  toast({
+                                    title: "Contact Initiated",
+                                    description: "You can now message this candidate."
+                                  });
+                                }}
+                              >
+                                Contact
+                              </Button>
                             </div>
-                          </div>
-                          <div className="mt-4 space-y-3">
-                            <div>
-                              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Skills</p>
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                {candidate.skills.map((skill, index) => (
-                                  <Badge key={index} variant="outline" className="text-xs">
-                                    {skill}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Achievements</p>
-                              <ul className="text-sm text-gray-600 dark:text-gray-400 mt-1 list-disc list-inside">
-                                {candidate.achievements.map((achievement, index) => (
-                                  <li key={index}>{achievement}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          </div>
-                          <div className="mt-4 flex justify-end gap-2">
-                            <Button variant="outline" size="sm">View Profile</Button>
-                            <Button size="sm">Contact</Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
                 </TabsContent>
                 
                 <TabsContent value="ats">
@@ -384,7 +496,22 @@ const TalentSearch = () => {
                         </div>
                       </div>
                       <div className="flex justify-end mt-6">
-                        <Button variant="outline" className="mr-2">Reset to Default</Button>
+                        <Button 
+                          variant="outline" 
+                          className="mr-2" 
+                          onClick={() => {
+                            setAtsParameters({
+                              requiredSkills: "",
+                              preferredSkills: "",
+                              experienceLevel: "any",
+                              minEducation: "bachelor",
+                              keywordWeight: "medium",
+                              resumeFormat: "any"
+                            });
+                          }}
+                        >
+                          Reset to Default
+                        </Button>
                         <Button onClick={applyATSParameters}>Apply ATS Parameters</Button>
                       </div>
                     </CardContent>

@@ -135,6 +135,9 @@ export interface ApplicationActivity {
 
 // Pagination Response
 export interface PaginatedResponse<T> {
+  candidates?: T[]; // For candidates endpoint
+  mentorships?: T[]; // For mentorship endpoint
+  mentors?: T[]; // For mentors endpoint
   opportunities?: T[]; // For opportunities endpoint
   applications?: T[];  // For applications endpoint
   pagination: {
@@ -268,6 +271,12 @@ export interface UserSkill {
   proficiency: 'beginner' | 'intermediate' | 'advanced' | 'expert';
   yearsOfExperience?: number;
   endorsements?: number;
+  level?: number; // 1-5 score
+  assessments?: Array<{
+    score: number;
+    certificate?: string;
+    date: string | Date;
+  }>;
 }
 
 // Mentorship Types
@@ -276,12 +285,7 @@ export interface MentorshipRequest {
   student: string | User;
   mentor: string | User;
   status: 'pending' | 'accepted' | 'rejected' | 'completed';
-  topic: string;
   message?: string;
-  schedule?: {
-    preferredDays: string[];
-    preferredTimes: string[];
-  };
   createdAt: string | Date;
   updatedAt: string | Date;
 }
@@ -413,4 +417,43 @@ export interface MicroInternshipApplication {
   proposal?: string;
   submittedAt: string | Date;
   updatedAt: string | Date;
+}
+
+// Assessment Types
+export interface AssessmentResult {
+  _id: string;
+  user: string | User;
+  skill: string | Skill;
+  score: number;
+  duration: number;
+  completedAt: string | Date;
+  certificate?: string;
+}
+
+// Talent Pool Stats
+export interface TalentPoolStats {
+  talentPoolSize: number;
+  educationDistribution: Record<string, number>;
+  experienceDistribution: Record<string, number>;
+  averageSkillMatch: number;
+  skillGaps: string[];
+}
+
+// Dashboard Stats
+export interface DashboardStats {
+  activeJobs: number;
+  totalApplications: number;
+  interviewsScheduled: number;
+  mentorshipMatches: number;
+  talentPoolSize?: number;
+}
+
+// Mentorship Stats
+export interface MentorshipStats {
+  totalRequests: number;
+  pendingRequests: number;
+  acceptedRequests: number;
+  rejectedRequests: number;
+  activeMentees: number;
+  recentRequests: MentorshipRequest[];
 }
