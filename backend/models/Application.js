@@ -62,6 +62,20 @@ const ApplicationSchema = new mongoose.Schema({
   skillMatch: {
     type: Number,
     default: 0
+  },
+  review: {
+    strengths: [String],
+    weaknesses: [String],
+    overallAssessment: String,
+    recommendationLevel: {
+      type: String,
+      enum: ['Highly Recommended', 'Recommended', 'Neutral', 'Not Recommended'],
+      default: 'Neutral'
+    },
+    reviewDate: {
+      type: Date,
+      default: Date.now
+    }
   }
 });
 

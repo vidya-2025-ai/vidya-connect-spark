@@ -11,6 +11,13 @@ export interface ApplicationFilters {
   sortOrder?: 'asc' | 'desc';
 }
 
+export interface ApplicationReview {
+  strengths: string[];
+  weaknesses: string[];
+  overallAssessment: string;
+  recommendationLevel: 'Highly Recommended' | 'Recommended' | 'Neutral' | 'Not Recommended';
+}
+
 export const applicationService = {
   getStudentApplications: async (filters: ApplicationFilters = {}): Promise<Application[]> => {
     const response = await api.get<PaginatedResponse<Application>>('/applications', { params: filters });
@@ -60,6 +67,11 @@ export const applicationService = {
   
   addFeedback: async (id: string, feedback: string, rating?: number): Promise<Application> => {
     const response = await api.post<Application>(`/applications/${id}/feedback`, { feedback, rating });
+    return response.data;
+  },
+
+  addReview: async (id: string, review: ApplicationReview): Promise<Application> => {
+    const response = await api.post<Application>(`/applications/${id}/review`, review);
     return response.data;
   },
   

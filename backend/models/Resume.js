@@ -14,11 +14,13 @@ const ResumeSchema = new mongoose.Schema({
   personalInfo: {
     name: {
       type: String,
-      required: true
+      required: true,
+      default: 'Your Name' // Default value to prevent validation errors
     },
     email: {
       type: String,
-      required: true
+      required: true,
+      default: 'your.email@example.com' // Default value to prevent validation errors
     },
     phone: String,
     address: String,

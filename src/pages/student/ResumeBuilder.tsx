@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StudentSidebar from '@/components/dashboard/StudentSidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +7,7 @@ import { Pencil, Download, PlusCircle, Copy, Trash, Eye, FileCheck } from "lucid
 import { resumeService } from '@/services/api/resumeService';
 import { Resume } from '@/services/api/types';
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +42,8 @@ const ResumeBuilder = () => {
     fetchResumes();
   }, []);
 
+  const { toast } = useToast();
+
   const handleCreateResume = async () => {
     if (!newResumeTitle.trim()) {
       toast({
@@ -54,12 +55,12 @@ const ResumeBuilder = () => {
     }
 
     try {
-      // Create a basic resume template
+      // Create a basic resume template with required fields
       const newResumeData = {
         title: newResumeTitle,
         personalInfo: {
-          name: "",
-          email: "",
+          name: "Your Name", // Required field
+          email: "your.email@example.com", // Required field
           phone: "",
           address: "",
           linkedin: "",
@@ -329,29 +330,37 @@ const ResumeBuilder = () => {
                     <TabsContent value="personal" className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="name">Full Name</Label>
-                          <Input id="name" defaultValue={editResume.personalInfo?.name || editResume.content?.personalInfo?.name} />
+                          <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
+                          <Input 
+                            id="name" 
+                            defaultValue={editResume.personalInfo?.name || ''} 
+                            required
+                          />
                         </div>
                         <div>
-                          <Label htmlFor="email">Email</Label>
-                          <Input id="email" defaultValue={editResume.personalInfo?.email || editResume.content?.personalInfo?.email} />
+                          <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
+                          <Input 
+                            id="email" 
+                            defaultValue={editResume.personalInfo?.email || ''} 
+                            required
+                          />
                         </div>
                         <div>
                           <Label htmlFor="phone">Phone</Label>
-                          <Input id="phone" defaultValue={editResume.personalInfo?.phone || editResume.content?.personalInfo?.phone} />
+                          <Input id="phone" defaultValue={editResume.personalInfo?.phone || ''} />
                         </div>
                         <div>
                           <Label htmlFor="linkedin">LinkedIn</Label>
-                          <Input id="linkedin" defaultValue={editResume.personalInfo?.linkedin || editResume.content?.personalInfo?.linkedin} />
+                          <Input id="linkedin" defaultValue={editResume.personalInfo?.linkedin || ''} />
                         </div>
                       </div>
                       <div>
                         <Label htmlFor="address">Address</Label>
-                        <Input id="address" defaultValue={editResume.personalInfo?.address || editResume.content?.personalInfo?.address} />
+                        <Input id="address" defaultValue={editResume.personalInfo?.address || ''} />
                       </div>
                       <div>
                         <Label htmlFor="website">Website</Label>
-                        <Input id="website" defaultValue={editResume.personalInfo?.website || editResume.content?.personalInfo?.website} />
+                        <Input id="website" defaultValue={editResume.personalInfo?.website || ''} />
                       </div>
                     </TabsContent>
                     

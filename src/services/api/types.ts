@@ -59,6 +59,14 @@ export interface User {
   location?: string;
 }
 
+export interface ApplicationReview {
+  strengths: string[];
+  weaknesses: string[];
+  overallAssessment: string;
+  recommendationLevel: 'Highly Recommended' | 'Recommended' | 'Neutral' | 'Not Recommended';
+  reviewDate?: string;
+}
+
 export interface Application {
   id: string;
   _id?: string; // Adding both for compatibility
@@ -78,6 +86,7 @@ export interface Application {
   coverLetter?: string;
   notes?: string;
   interviewDate?: string;
+  review?: ApplicationReview;
   activities?: {
     id: string;
     _id?: string;

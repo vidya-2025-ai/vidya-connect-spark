@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
@@ -389,6 +388,52 @@ router.post('/:applicationId/feedback', auth, async (req, res) => {
     application.activities.push({
       type: 'Feedback Added',
       description: 'Recruiter added feedback to the application'
+    });
+
+    await application.save();
+
+    res.json(application);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Add a comprehensive review to an application
+router.post('/:applicationId/review', auth, async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const { strengths, weaknesses, overallAssessment, recommendationLevel } = req.body;
+
+    // Check if user is a recruiter
+    if (req.user.role !== 'recruiter') {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    // Find the application
+    const application = await Application.findById(applicationId).populate('opportunity');
+    if (!application) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    // Check if the opportunity belongs to the recruiter
+    if (application.opportunity.organization.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    // Update review information
+    application.review = {
+      strengths: strengths || [],
+      weaknesses: weaknesses || [],
+      overallAssessment: overallAssessment || '',
+      recommendationLevel: recommendationLevel || 'Neutral',
+      reviewDate: Date.now()
+    };
+    
+    application.lastUpdated = Date.now();
+    application.activities.push({
+      type: 'Review Added',
+      description: 'Recruiter added a comprehensive review'
     });
 
     await application.save();
