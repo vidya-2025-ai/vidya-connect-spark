@@ -1,10 +1,38 @@
 
 import api from './index';
-import { Event } from './types';
+import { Event, PaginatedResponse } from './types';
+
+export interface EventFilters {
+  type?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface EventStatistics {
+  totalEvents: number;
+  upcomingEvents: number;
+  eventsByType: {
+    type: string;
+    count: number;
+  }[];
+  eventsByMonth: {
+    month: string;
+    count: number;
+  }[];
+}
 
 export const calendarService = {
-  getAllEvents: async (): Promise<Event[]> => {
-    const response = await api.get<Event[]>('/calendar');
+  getAllEvents: async (filters: EventFilters = {}): Promise<Event[]> => {
+    const response = await api.get<PaginatedResponse<Event>>('/calendar', { 
+      params: filters 
+    });
+    return response.data.events || [];
+  },
+  
+  getEventById: async (id: string): Promise<Event> => {
+    const response = await api.get<Event>(`/calendar/${id}`);
     return response.data;
   },
   
@@ -19,7 +47,18 @@ export const calendarService = {
   },
   
   deleteEvent: async (id: string): Promise<void> => {
-    const response = await api.delete<void>(`/calendar/${id}`);
+    await api.delete<void>(`/calendar/${id}`);
+  },
+  
+  getEventStatistics: async (): Promise<EventStatistics> => {
+    const response = await api.get<EventStatistics>('/calendar/statistics');
+    return response.data;
+  },
+  
+  getRecentEvents: async (limit: number = 5): Promise<Event[]> => {
+    const response = await api.get<Event[]>('/calendar/recent', { 
+      params: { limit } 
+    });
     return response.data;
   }
 };

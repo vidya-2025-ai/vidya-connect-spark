@@ -14,6 +14,8 @@ import grievanceService from './grievanceService';
 import challengeService from './challengeService';
 import microInternshipService from './microInternshipService';
 import userService from './userService';
+import dashboardService from './dashboardService';
+import skillAssessmentService from './skillAssessmentService';
 
 export {
   authService,
@@ -29,5 +31,7 @@ export {
   grievanceService,
   challengeService,
   microInternshipService,
-  userService
+  userService,
+  dashboardService,
+  skillAssessmentService
 };

@@ -1,16 +1,57 @@
 
 import api from './index';
-import { CommunityPost, PostComment } from './types';
+import { CommunityPost, PostComment, PaginatedResponse } from './types';
+
+export interface PostFilters {
+  search?: string;
+  author?: string;
+  sortBy?: 'latest' | 'popular';
+  page?: number;
+  limit?: number;
+}
+
+export interface CommunityStatistics {
+  totalPosts: number;
+  totalComments: number;
+  activePosts: number;
+  totalLikes: number;
+  topContributors: {
+    userId: string;
+    name: string;
+    role: string;
+    postCount: number;
+  }[];
+  postsByDay: {
+    date: string;
+    count: number;
+  }[];
+}
 
 export const communityService = {
-  getPosts: async (): Promise<CommunityPost[]> => {
-    const response = await api.get<CommunityPost[]>('/community/posts');
+  getPosts: async (filters: PostFilters = {}): Promise<CommunityPost[]> => {
+    const response = await api.get<PaginatedResponse<CommunityPost>>('/community/posts', { 
+      params: filters 
+    });
+    return response.data.posts || [];
+  },
+  
+  getPostById: async (id: string): Promise<CommunityPost> => {
+    const response = await api.get<CommunityPost>(`/community/posts/${id}`);
     return response.data;
   },
   
   createPost: async (postData: { title: string, content: string }): Promise<CommunityPost> => {
     const response = await api.post<CommunityPost>('/community/posts', postData);
     return response.data;
+  },
+  
+  updatePost: async (id: string, postData: { title?: string, content?: string }): Promise<CommunityPost> => {
+    const response = await api.put<CommunityPost>(`/community/posts/${id}`, postData);
+    return response.data;
+  },
+  
+  deletePost: async (id: string): Promise<void> => {
+    await api.delete<void>(`/community/posts/${id}`);
   },
   
   getPostComments: async (postId: string): Promise<PostComment[]> => {
@@ -23,6 +64,10 @@ export const communityService = {
     return response.data;
   },
   
+  deleteComment: async (postId: string, commentId: string): Promise<void> => {
+    await api.delete<void>(`/community/posts/${postId}/comments/${commentId}`);
+  },
+  
   likePost: async (postId: string): Promise<{ id: string, likes: number }> => {
     const response = await api.post<{ id: string, likes: number }>(`/community/posts/${postId}/like`);
     return response.data;
@@ -30,6 +75,18 @@ export const communityService = {
   
   unlikePost: async (postId: string): Promise<{ id: string, likes: number }> => {
     const response = await api.post<{ id: string, likes: number }>(`/community/posts/${postId}/unlike`);
+    return response.data;
+  },
+  
+  getCommunityStatistics: async (): Promise<CommunityStatistics> => {
+    const response = await api.get<CommunityStatistics>('/community/statistics');
+    return response.data;
+  },
+  
+  getFeaturedPosts: async (limit: number = 3): Promise<CommunityPost[]> => {
+    const response = await api.get<CommunityPost[]>('/community/posts/featured', {
+      params: { limit }
+    });
     return response.data;
   }
 };
