@@ -17,7 +17,27 @@ import userService from './userService';
 import dashboardService from './dashboardService';
 import skillAssessmentService from './skillAssessmentService';
 
+// Also export all types
+import {
+  User,
+  Application,
+  Event,
+  CommunityPost,
+  PostComment,
+  Grievance,
+  GrievanceResponse,
+  Challenge,
+  ChallengeSolution,
+  MentorshipRequest,
+  PaginatedResponse,
+  Resume,
+  Certificate,
+  ATSParameter,
+  Opportunity
+} from './types';
+
 export {
+  // Services
   authService,
   applicationService,
   opportunityService,
@@ -33,5 +53,22 @@ export {
   microInternshipService,
   userService,
   dashboardService,
-  skillAssessmentService
+  skillAssessmentService,
+  
+  // Types
+  User,
+  Application,
+  Event,
+  CommunityPost,
+  PostComment,
+  Grievance,
+  GrievanceResponse,
+  Challenge,
+  ChallengeSolution,
+  MentorshipRequest,
+  PaginatedResponse,
+  Resume,
+  Certificate,
+  ATSParameter,
+  Opportunity
 };

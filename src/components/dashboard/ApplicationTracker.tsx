@@ -143,7 +143,7 @@ const ApplicationTracker = () => {
             : application.opportunity.organization?.organization || '';
 
           return (
-            <Card key={application._id} className="vs-card">
+            <Card key={application.id || application._id} className="vs-card">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>

@@ -4,72 +4,72 @@ import { User, PaginatedResponse } from './types';
 
 export interface CandidateFilters {
   role?: string;
-  skills?: string[];
   name?: string;
+  skills?: string[];
+  location?: string;
   experienceLevel?: string;
   education?: string;
-  location?: string;
-  page?: number;
-  limit?: number;
+  availability?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+  search?: string;
 }
 
-export interface CandidateSkill {
-  id: string;
-  name: string;
-  category: string;
-  level: number;
-  assessments: Array<{
-    score: number;
-    date: string;
-    certificate?: string;
-  }>;
-}
-
-export interface CandidateProfile extends User {
-  experience: Array<{
-    company: string;
-    position: string;
+export interface CandidateStatistics {
+  totalCandidates: number;
+  bySkill: {
+    skill: string;
+    count: number;
+  }[];
+  byExperience: {
+    level: string;
+    count: number;
+  }[];
+  byLocation: {
     location: string;
-    startDate: string;
-    endDate?: string;
-    current: boolean;
-    description?: string;
-  }>;
+    count: number;
+  }[];
 }
 
-export const candidateService = {
+const candidateService = {
   searchCandidates: async (filters: CandidateFilters = {}): Promise<User[]> => {
-    const params: any = { ...filters };
-    
-    // Format skills array for query params if present
-    if (filters.skills && filters.skills.length) {
-      params.skills = filters.skills.join(',');
-    }
-    
-    const response = await api.get<PaginatedResponse<User>>('/users/search', { params });
-    return response.data.candidates || [];
+    const response = await api.get<PaginatedResponse<User>>('/candidates/search', { 
+      params: filters 
+    });
+    return response.data.data || [];
   },
   
-  getCandidateProfile: async (id: string): Promise<CandidateProfile> => {
-    const response = await api.get<CandidateProfile>(`/users/${id}/profile`);
+  getCandidateById: async (id: string): Promise<User> => {
+    const response = await api.get<User>(`/candidates/${id}`);
     return response.data;
   },
   
-  getCandidateSkills: async (id: string): Promise<CandidateSkill[]> => {
-    const response = await api.get<CandidateSkill[]>(`/users/${id}/skills`);
+  getCandidateStatistics: async (): Promise<CandidateStatistics> => {
+    const response = await api.get<CandidateStatistics>('/candidates/statistics');
     return response.data;
   },
   
-  getTalentPoolStats: async (): Promise<{
-    talentPoolSize: number;
-    educationDistribution: Record<string, number>;
-    experienceDistribution: Record<string, number>;
-    averageSkillMatch: number;
-    skillGaps: string[];
-  }> => {
-    const response = await api.get('/dashboard/recruiter/talent');
+  getRecommendedCandidates: async (opportunityId: string): Promise<User[]> => {
+    const response = await api.get<User[]>(`/candidates/recommended/${opportunityId}`);
+    return response.data;
+  },
+  
+  addCandidateToShortlist: async (candidateId: string, opportunityId: string): Promise<any> => {
+    const response = await api.post<any>('/candidates/shortlist', { candidateId, opportunityId });
+    return response.data;
+  },
+  
+  removeCandidateFromShortlist: async (candidateId: string, opportunityId: string): Promise<any> => {
+    const response = await api.delete<any>('/candidates/shortlist', { 
+      data: { candidateId, opportunityId } 
+    });
+    return response.data;
+  },
+  
+  getShortlistedCandidates: async (opportunityId: string): Promise<User[]> => {
+    const response = await api.get<User[]>(`/candidates/shortlisted/${opportunityId}`);
     return response.data;
   }
 };
