@@ -1,30 +1,88 @@
 
 const express = require('express');
+const router = express.Router();
 const auth = require('../middleware/auth');
 const Grievance = require('../models/Grievance');
 const User = require('../models/User');
-const router = express.Router();
 
-// Get all grievances relevant to user
-router.get('/', auth, async (req, res) => {
+// Get all grievances for recruiter
+router.get('/recruiter', auth, async (req, res) => {
   try {
-    let grievances;
-    
-    // If recruiter, get all grievances
-    // If student, get only their own grievances
-    if (req.user.role === 'recruiter') {
-      grievances = await Grievance.find().sort({ createdAt: -1 });
-    } else {
-      grievances = await Grievance.find({ createdBy: req.user.id }).sort({ createdAt: -1 });
+    // Ensure user is a recruiter
+    if (req.user.role !== 'recruiter') {
+      return res.status(403).json({ message: 'Unauthorized' });
     }
     
-    // Format the response
+    const { status, page = 1, limit = 10, search } = req.query;
+    const skip = (page - 1) * limit;
+    
+    // Build query
+    let query = {};
+    
+    // Filter by status if provided
+    if (status) {
+      query.status = status;
+    }
+    
+    // Search in title or description if provided
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // Get grievances with pagination
+    const grievances = await Grievance.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+    
+    // Get total count for pagination
+    const totalCount = await Grievance.countDocuments(query);
+    
+    // Format grievances
     const formattedGrievances = grievances.map(grievance => ({
       id: grievance._id,
       title: grievance.title,
       description: grievance.description,
       status: grievance.status,
-      createdBy: {
+      creatorName: grievance.creatorName,
+      creatorRole: grievance.creatorRole,
+      responseCount: grievance.responses.length,
+      createdAt: grievance.createdAt
+    }));
+    
+    res.json({
+      grievances: formattedGrievances,
+      pagination: {
+        totalCount,
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalCount / limit)
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get grievance details
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const grievance = await Grievance.findById(id);
+    if (!grievance) {
+      return res.status(404).json({ message: 'Grievance not found' });
+    }
+    
+    res.json({
+      id: grievance._id,
+      title: grievance.title,
+      description: grievance.description,
+      status: grievance.status,
+      creator: {
         id: grievance.createdBy,
         name: grievance.creatorName,
         role: grievance.creatorRole
@@ -40,53 +98,6 @@ router.get('/', auth, async (req, res) => {
         createdAt: response.createdAt
       })),
       createdAt: grievance.createdAt
-    }));
-    
-    res.json(formattedGrievances);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// File a new grievance
-router.post('/', auth, async (req, res) => {
-  try {
-    const { title, description } = req.body;
-    
-    if (!title || !description) {
-      return res.status(400).json({ message: 'Title and description are required' });
-    }
-    
-    // Get user data
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    // Create new grievance
-    const grievance = new Grievance({
-      title,
-      description,
-      createdBy: req.user.id,
-      creatorName: `${user.firstName} ${user.lastName}`,
-      creatorRole: user.role
-    });
-    
-    await grievance.save();
-    
-    res.status(201).json({
-      id: grievance._id,
-      title: grievance.title,
-      description: grievance.description,
-      status: grievance.status,
-      createdBy: {
-        id: grievance.createdBy,
-        name: grievance.creatorName,
-        role: grievance.creatorRole
-      },
-      responses: [],
-      createdAt: grievance.createdAt
     });
   } catch (error) {
     console.error(error);
@@ -94,7 +105,7 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// Add response to a grievance
+// Add response to grievance
 router.put('/:id/response', auth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -110,7 +121,7 @@ router.put('/:id/response', auth, async (req, res) => {
       return res.status(404).json({ message: 'Grievance not found' });
     }
     
-    // Get user data
+    // Get user
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -127,20 +138,27 @@ router.put('/:id/response', auth, async (req, res) => {
     
     // Add response to grievance
     grievance.responses.push(response);
+    
+    // Update status to 'resolved' if it was 'pending'
+    if (grievance.status === 'pending' && user.role === 'recruiter') {
+      grievance.status = 'resolved';
+    }
+    
     await grievance.save();
     
-    // Get the newly added response
-    const newResponse = grievance.responses[grievance.responses.length - 1];
-    
     res.json({
-      id: newResponse._id,
-      content: newResponse.content,
-      responder: {
-        id: newResponse.responder,
-        name: newResponse.responderName,
-        role: newResponse.responderRole
-      },
-      createdAt: newResponse.createdAt
+      id: grievance._id,
+      status: grievance.status,
+      response: {
+        id: grievance.responses[grievance.responses.length - 1]._id,
+        content: response.content,
+        responder: {
+          id: response.responder,
+          name: response.responderName,
+          role: response.responderRole
+        },
+        createdAt: response.createdAt
+      }
     });
   } catch (error) {
     console.error(error);
@@ -148,8 +166,38 @@ router.put('/:id/response', auth, async (req, res) => {
   }
 });
 
-// Close a grievance
+// Close grievance (change status to closed)
 router.put('/:id/close', auth, async (req, res) => {
+  try {
+    // Only recruiters can close grievances
+    if (req.user.role !== 'recruiter') {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    
+    const { id } = req.params;
+    
+    // Find grievance
+    const grievance = await Grievance.findById(id);
+    if (!grievance) {
+      return res.status(404).json({ message: 'Grievance not found' });
+    }
+    
+    // Update status
+    grievance.status = 'closed';
+    await grievance.save();
+    
+    res.json({
+      id: grievance._id,
+      status: grievance.status
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Reopen grievance (change status to pending)
+router.put('/:id/reopen', auth, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -159,17 +207,79 @@ router.put('/:id/close', auth, async (req, res) => {
       return res.status(404).json({ message: 'Grievance not found' });
     }
     
-    // Check permission
-    // Only the creator or a recruiter can close a grievance
-    if (grievance.createdBy.toString() !== req.user.id && req.user.role !== 'recruiter') {
-      return res.status(403).json({ message: 'Unauthorized to close this grievance' });
+    // Ensure only the creator or a recruiter can reopen
+    if (
+      grievance.createdBy.toString() !== req.user.id && 
+      req.user.role !== 'recruiter'
+    ) {
+      return res.status(403).json({ message: 'Unauthorized' });
     }
     
-    // Update status to closed
-    grievance.status = 'closed';
+    // Update status
+    grievance.status = 'pending';
     await grievance.save();
     
-    res.json({ id, status: 'closed' });
+    res.json({
+      id: grievance._id,
+      status: grievance.status
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get grievance statistics for recruiter dashboard
+router.get('/statistics', auth, async (req, res) => {
+  try {
+    // Ensure user is a recruiter
+    if (req.user.role !== 'recruiter') {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    
+    // Get all grievances
+    const grievances = await Grievance.find();
+    
+    // Calculate statistics
+    const totalGrievances = grievances.length;
+    const pendingGrievances = grievances.filter(g => g.status === 'pending').length;
+    const resolvedGrievances = grievances.filter(g => g.status === 'resolved').length;
+    const closedGrievances = grievances.filter(g => g.status === 'closed').length;
+    
+    // Response time statistics (in hours)
+    const responseTimes = grievances
+      .filter(g => g.responses.length > 0)
+      .map(g => {
+        const firstResponse = g.responses[0];
+        const created = new Date(g.createdAt).getTime();
+        const responded = new Date(firstResponse.createdAt).getTime();
+        return (responded - created) / (1000 * 60 * 60); // hours
+      });
+    
+    const averageResponseTime = responseTimes.length > 0
+      ? responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length
+      : 0;
+    
+    const minResponseTime = responseTimes.length > 0
+      ? Math.min(...responseTimes)
+      : 0;
+    
+    const maxResponseTime = responseTimes.length > 0
+      ? Math.max(...responseTimes)
+      : 0;
+    
+    res.json({
+      totalGrievances,
+      pendingGrievances,
+      resolvedGrievances,
+      closedGrievances,
+      responseTime: {
+        average: parseFloat(averageResponseTime.toFixed(2)),
+        min: parseFloat(minResponseTime.toFixed(2)),
+        max: parseFloat(maxResponseTime.toFixed(2))
+      },
+      categoryCounts: [] // Would need to add category field to Grievance model
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

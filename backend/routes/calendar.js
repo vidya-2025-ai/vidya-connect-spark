@@ -17,6 +17,103 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// Get recruiter-specific events
+router.get('/recruiter', auth, async (req, res) => {
+  try {
+    // Verify user is a recruiter
+    if (req.user.role !== 'recruiter') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const { type, startDate, endDate } = req.query;
+    const query = { user: req.user.id };
+
+    // Apply filters if provided
+    if (type) query.type = type;
+    if (startDate && endDate) {
+      query.date = { 
+        $gte: new Date(startDate), 
+        $lte: new Date(endDate) 
+      };
+    } else if (startDate) {
+      query.date = { $gte: new Date(startDate) };
+    } else if (endDate) {
+      query.date = { $lte: new Date(endDate) };
+    }
+
+    const events = await Event.find(query).sort({ date: 1 });
+    
+    res.json(events);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get statistics for recruiter events
+router.get('/recruiter/statistics', auth, async (req, res) => {
+  try {
+    // Verify user is a recruiter
+    if (req.user.role !== 'recruiter') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const now = new Date();
+    const events = await Event.find({ 
+      user: req.user.id 
+    });
+    
+    // Calculate statistics
+    const totalEvents = events.length;
+    const upcomingEvents = events.filter(event => new Date(event.date) >= now).length;
+    
+    // Calculate events by type
+    const eventsByType = [];
+    const typeCount = {};
+    events.forEach(event => {
+      if (!typeCount[event.type]) {
+        typeCount[event.type] = 0;
+      }
+      typeCount[event.type]++;
+    });
+    
+    for (const [type, count] of Object.entries(typeCount)) {
+      eventsByType.push({ type, count });
+    }
+    
+    // Calculate events by month for the next 6 months
+    const eventsByMonth = [];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                   'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    for (let i = 0; i < 6; i++) {
+      const monthIndex = (currentMonth + i) % 12;
+      const year = currentYear + Math.floor((currentMonth + i) / 12);
+      const monthName = `${months[monthIndex]} ${year}`;
+      
+      const count = events.filter(event => {
+        const eventDate = new Date(event.date);
+        return eventDate.getMonth() === monthIndex && eventDate.getFullYear() === year;
+      }).length;
+      
+      eventsByMonth.push({ month: monthName, count });
+    }
+    
+    res.json({
+      totalEvents,
+      upcomingEvents,
+      eventsByType,
+      eventsByMonth,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Create new event
 router.post('/', auth, async (req, res) => {
   try {
@@ -95,7 +192,7 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' });
     }
     
-    await event.remove();
+    await Event.deleteOne({ _id: id });
     
     res.json({ message: 'Event removed' });
   } catch (error) {

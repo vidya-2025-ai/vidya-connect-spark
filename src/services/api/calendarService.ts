@@ -31,6 +31,13 @@ export const calendarService = {
     return response.data.events || [];
   },
   
+  getRecruiterEvents: async (filters: EventFilters = {}): Promise<Event[]> => {
+    const response = await api.get<PaginatedResponse<Event>>('/calendar/recruiter', { 
+      params: filters 
+    });
+    return response.data.events || [];
+  },
+  
   getEventById: async (id: string): Promise<Event> => {
     const response = await api.get<Event>(`/calendar/${id}`);
     return response.data;
@@ -51,7 +58,7 @@ export const calendarService = {
   },
   
   getEventStatistics: async (): Promise<EventStatistics> => {
-    const response = await api.get<EventStatistics>('/calendar/statistics');
+    const response = await api.get<EventStatistics>('/calendar/recruiter/statistics');
     return response.data;
   },
   

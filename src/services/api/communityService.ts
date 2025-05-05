@@ -35,6 +35,13 @@ export const communityService = {
     return response.data.posts || [];
   },
   
+  getRecruiterPosts: async (filters: PostFilters = {}): Promise<CommunityPost[]> => {
+    const response = await api.get<PaginatedResponse<CommunityPost>>('/community/recruiter', { 
+      params: filters 
+    });
+    return response.data.posts || [];
+  },
+  
   getPostById: async (id: string): Promise<CommunityPost> => {
     const response = await api.get<CommunityPost>(`/community/posts/${id}`);
     return response.data;

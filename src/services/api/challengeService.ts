@@ -37,6 +37,20 @@ export const challengeService = {
     return response.data.challenges || [];
   },
   
+  getRecruiterChallenges: async (filters: ChallengeFilters = {}): Promise<Challenge[]> => {
+    const params = { ...filters };
+    
+    // Format skills array for query params if present
+    if (filters.skillRequired && filters.skillRequired.length) {
+      params.skillRequired = filters.skillRequired.join(',') as any;
+    }
+    
+    const response = await api.get<PaginatedResponse<Challenge>>('/challenges/recruiter', {
+      params
+    });
+    return response.data.challenges || [];
+  },
+  
   createChallenge: async (challengeData: any): Promise<Challenge> => {
     const response = await api.post<Challenge>('/challenges', challengeData);
     return response.data;
@@ -75,7 +89,7 @@ export const challengeService = {
   },
   
   getChallengeStatistics: async (): Promise<ChallengeStatistics> => {
-    const response = await api.get<ChallengeStatistics>('/challenges/statistics');
+    const response = await api.get<ChallengeStatistics>('/challenges/recruiter/statistics');
     return response.data;
   },
   

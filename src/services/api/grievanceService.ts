@@ -33,6 +33,13 @@ export const grievanceService = {
     return response.data.grievances || [];
   },
   
+  getRecruiterGrievances: async (filters: GrievanceFilters = {}): Promise<Grievance[]> => {
+    const response = await api.get<PaginatedResponse<Grievance>>('/grievances/recruiter', { 
+      params: filters 
+    });
+    return response.data.grievances || [];
+  },
+  
   getGrievanceById: async (id: string): Promise<Grievance> => {
     const response = await api.get<Grievance>(`/grievances/${id}`);
     return response.data;
