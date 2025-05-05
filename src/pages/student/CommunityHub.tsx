@@ -30,6 +30,20 @@ const formatDate = (dateString: string | Date): string => {
   });
 };
 
+// Helper function to get the number of comments for a post
+const getCommentsCount = (post: CommunityPost): number => {
+  if (typeof post.comments === 'number') {
+    return post.comments;
+  }
+  if (Array.isArray(post.comments)) {
+    return post.comments.length;
+  }
+  if (Array.isArray(post.replies)) {
+    return post.replies.length;
+  }
+  return 0;
+};
+
 const CommunityHub = () => {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [activePost, setActivePost] = useState<CommunityPost | null>(null);
@@ -381,9 +395,7 @@ const CommunityHub = () => {
                             >
                               <MessageSquare className="h-4 w-4" />
                               <span>
-                                {typeof post.comments === 'number' 
-                                  ? post.comments
-                                  : (Array.isArray(post.comments) ? post.comments.length : 0)}
+                                {getCommentsCount(post)}
                               </span>
                             </Button>
                           </div>
@@ -439,9 +451,7 @@ const CommunityHub = () => {
                             >
                               <MessageSquare className="h-4 w-4" />
                               <span>
-                                {typeof post.comments === 'number' 
-                                  ? post.comments
-                                  : (Array.isArray(post.comments) ? post.comments.length : 0)}
+                                {getCommentsCount(post)}
                               </span>
                             </Button>
                           </div>
@@ -496,9 +506,7 @@ const CommunityHub = () => {
                             >
                               <MessageSquare className="h-4 w-4" />
                               <span>
-                                {typeof post.comments === 'number' 
-                                  ? post.comments
-                                  : (Array.isArray(post.comments) ? post.comments.length : 0)}
+                                {getCommentsCount(post)}
                               </span>
                             </Button>
                           </div>

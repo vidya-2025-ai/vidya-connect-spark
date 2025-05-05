@@ -127,19 +127,27 @@ const Applications = () => {
             ) : (
               <div className="space-y-4">
                 {applications.map((application) => {
-                  const opportunityTitle = typeof application.opportunity === 'string' 
-                    ? 'Opportunity' 
-                    : application.opportunity.title;
+                  let opportunityTitle = 'Opportunity';
+                  let organizationName = '';
                   
-                  const organizationName = typeof application.opportunity === 'string'
-                    ? ''
-                    : application.opportunity.organization?.organization || '';
+                  if (typeof application.opportunity !== 'string') {
+                    opportunityTitle = application.opportunity.title || 'Opportunity';
                     
+                    if (application.opportunity.organization) {
+                      if (typeof application.opportunity.organization === 'string') {
+                        organizationName = application.opportunity.organization;
+                      } else {
+                        organizationName = application.opportunity.organization.organization || 
+                                          application.opportunity.organization.name || '';
+                      }
+                    }
+                  }
+                  
                   const statusColor = getStatusColor(application.status);
                   const borderColor = getStatusBorder(application.status);
 
                   return (
-                    <Card key={application._id} className="hover:shadow-md transition-shadow overflow-hidden border border-gray-200 dark:border-gray-700">
+                    <Card key={application.id || application._id} className="hover:shadow-md transition-shadow overflow-hidden border border-gray-200 dark:border-gray-700">
                       <div className={`w-1 absolute left-0 top-0 bottom-0 ${borderColor}`}></div>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <div>
@@ -155,7 +163,7 @@ const Applications = () => {
                           <p className="text-sm text-gray-600 dark:text-gray-400">
                             Applied on: {new Date(application.appliedDate).toLocaleDateString()}
                           </p>
-                          <Link to={`/student/applications/${application._id}`}>
+                          <Link to={`/student/applications/${application.id || application._id}`}>
                             <Button variant="outline" size="sm">View Details</Button>
                           </Link>
                         </div>

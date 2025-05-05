@@ -65,8 +65,12 @@ export interface Application {
   opportunity: {
     id: string;
     title: string;
-    organization?: string;
-  };
+    organization?: {
+      id?: string;
+      organization?: string;
+      name?: string;
+    };
+  } | string;
   student: User;
   status: string;
   appliedDate: string;
@@ -111,7 +115,7 @@ export interface CommunityPost {
     role: string;
   };
   likes: number;
-  comments: number;
+  comments: number | PostComment[]; // Allow both number and array types
   createdAt: string;
   replies?: PostComment[];
 }
@@ -203,7 +207,11 @@ export interface Opportunity {
   id: string;
   _id?: string;
   title: string;
-  organization: string;
+  organization: {
+    id?: string;
+    organization?: string;
+    name?: string;
+  } | string;
   description: string;
   requirements: string[];
   location?: string;

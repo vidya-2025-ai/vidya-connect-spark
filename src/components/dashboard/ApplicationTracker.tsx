@@ -134,13 +134,22 @@ const ApplicationTracker = () => {
       <div className="space-y-4">
         {applications.map((application) => {
           const { icon: StatusIcon, color: statusColor } = getStatusIcon(application.status);
-          const opportunityTitle = typeof application.opportunity === 'string' 
-            ? 'Opportunity' 
-            : application.opportunity.title;
           
-          const organizationName = typeof application.opportunity === 'string'
-            ? ''
-            : application.opportunity.organization?.organization || '';
+          let opportunityTitle = 'Opportunity';
+          let organizationName = '';
+          
+          if (typeof application.opportunity !== 'string') {
+            opportunityTitle = application.opportunity.title || 'Opportunity';
+            
+            if (application.opportunity.organization) {
+              if (typeof application.opportunity.organization === 'string') {
+                organizationName = application.opportunity.organization;
+              } else {
+                organizationName = application.opportunity.organization.organization || 
+                                  application.opportunity.organization.name || '';
+              }
+            }
+          }
 
           return (
             <Card key={application.id || application._id} className="vs-card">

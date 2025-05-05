@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import StudentSidebar from '@/components/dashboard/StudentSidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -198,9 +197,9 @@ const ExploreOpportunities = () => {
                             <div>
                               <CardTitle>{opportunity.title}</CardTitle>
                               <CardDescription>
-                                {typeof opportunity.organization === 'string' 
-                                  ? 'Organization' 
-                                  : opportunity.organization.organization}
+                                {typeof opportunity.organization === 'string'
+                                  ? opportunity.organization
+                                  : opportunity.organization?.organization || opportunity.organization?.name || 'Organization'}
                               </CardDescription>
                             </div>
                             <Badge>
