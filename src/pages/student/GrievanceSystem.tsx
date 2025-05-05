@@ -539,7 +539,7 @@ const GrievanceSystem = () => {
                               <div className="flex items-center space-x-2">
                                 <p className="font-medium text-sm">{getName(response.responder)}</p>
                                 <Badge variant="outline" className="text-xs">
-                                  {typeof response.responder === 'object' && response.responder !== null ? response.responder.role : response.responderRole}
+                                  {typeof response.responder === 'object' && response.responder !== null ? response.responder.role : ''}
                                 </Badge>
                                 <span className="text-xs text-gray-500">
                                   {formatDate(response.createdAt)}
