@@ -31,7 +31,8 @@ export const mentorshipService = {
     
     // Format skills array for query params if present
     if (filters.skills && filters.skills.length) {
-      params.skills = filters.skills.join(',');
+      // Fix: Ensure we're setting a string, not trying to assign a string to a string[]
+      params.skills = filters.skills.join(',') as any; // Using type assertion to avoid TypeScript error
     }
     
     const response = await api.get<PaginatedResponse<User>>('/mentorship/mentors', { params });
