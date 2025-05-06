@@ -15,11 +15,16 @@ const SolutionSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  repositoryUrl: {
+    type: String
+  },
   attachments: [{
     type: String
   }],
   score: {
-    type: Number
+    type: Number,
+    min: 0,
+    max: 10
   },
   feedback: {
     type: String
@@ -32,13 +37,25 @@ const SolutionSchema = new mongoose.Schema({
   submittedAt: {
     type: Date,
     default: Date.now
+  },
+  evaluatedAt: {
+    type: Date
   }
+});
+
+// Update evaluatedAt when status changes to evaluated
+SolutionSchema.pre('save', function(next) {
+  if (this.isModified('status') && this.status === 'evaluated') {
+    this.evaluatedAt = new Date();
+  }
+  next();
 });
 
 const ChallengeSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   description: {
     type: String,
@@ -54,7 +71,8 @@ const ChallengeSchema = new mongoose.Schema({
     required: true
   },
   skillsRequired: [{
-    type: String
+    type: String,
+    trim: true
   }],
   deadline: {
     type: Date,
@@ -68,10 +86,42 @@ const ChallengeSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
 });
 
+// Pre-save hook to update the updatedAt field
+ChallengeSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
+});
+
+// Create virtual for solution count
+ChallengeSchema.virtual('solutionCount').get(function() {
+  return this.solutions.length;
+});
+
+// Create virtual for evaluated solutions count
+ChallengeSchema.virtual('evaluatedCount').get(function() {
+  return this.solutions.filter(sol => sol.status === 'evaluated').length;
+});
+
+// Create virtual for checking if deadline has passed
+ChallengeSchema.virtual('isExpired').get(function() {
+  return new Date() > this.deadline;
+});
+
+// Ensure virtuals are included when converting to JSON
+ChallengeSchema.set('toJSON', { virtuals: true });
+ChallengeSchema.set('toObject', { virtuals: true });
+
+const Challenge = mongoose.model('Challenge', ChallengeSchema);
+const Solution = mongoose.model('Solution', SolutionSchema);
+
 module.exports = {
-  Challenge: mongoose.model('Challenge', ChallengeSchema),
-  Solution: mongoose.model('Solution', SolutionSchema)
+  Challenge,
+  Solution
 };

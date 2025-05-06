@@ -28,6 +28,7 @@ export interface CommunityStatistics {
 }
 
 export const communityService = {
+  // Post related endpoints
   getPosts: async (filters: PostFilters = {}): Promise<CommunityPost[]> => {
     const response = await api.get<PaginatedResponse<CommunityPost>>('/community/posts', { 
       params: filters 
@@ -61,6 +62,7 @@ export const communityService = {
     await api.delete<void>(`/community/posts/${id}`);
   },
   
+  // Comment related endpoints
   getPostComments: async (postId: string): Promise<PostComment[]> => {
     const response = await api.get<PostComment[]>(`/community/posts/${postId}/comments`);
     return response.data;
@@ -75,6 +77,7 @@ export const communityService = {
     await api.delete<void>(`/community/posts/${postId}/comments/${commentId}`);
   },
   
+  // Interaction related endpoints
   likePost: async (postId: string): Promise<{ id: string, likes: number }> => {
     const response = await api.post<{ id: string, likes: number }>(`/community/posts/${postId}/like`);
     return response.data;
@@ -85,6 +88,7 @@ export const communityService = {
     return response.data;
   },
   
+  // Statistics endpoints
   getCommunityStatistics: async (): Promise<CommunityStatistics> => {
     const response = await api.get<CommunityStatistics>('/community/statistics');
     return response.data;

@@ -23,6 +23,7 @@ export interface ChallengeStatistics {
 }
 
 export const challengeService = {
+  // Challenge management endpoints
   getChallenges: async (filters: ChallengeFilters = {}): Promise<Challenge[]> => {
     const params = { ...filters };
     
@@ -70,6 +71,12 @@ export const challengeService = {
     await api.delete<void>(`/challenges/${id}`);
   },
   
+  toggleChallengeStatus: async (id: string, isActive: boolean): Promise<Challenge> => {
+    const response = await api.put<Challenge>(`/challenges/${id}/status`, { isActive });
+    return response.data;
+  },
+  
+  // Solution management endpoints
   submitSolution: async (challengeId: string, solutionData: any): Promise<ChallengeSolution> => {
     const response = await api.post<ChallengeSolution>(`/challenges/${challengeId}/solutions`, solutionData);
     return response.data;
@@ -88,13 +95,9 @@ export const challengeService = {
     return response.data;
   },
   
+  // Statistics endpoints
   getChallengeStatistics: async (): Promise<ChallengeStatistics> => {
     const response = await api.get<ChallengeStatistics>('/challenges/recruiter/statistics');
-    return response.data;
-  },
-  
-  toggleChallengeStatus: async (id: string, isActive: boolean): Promise<Challenge> => {
-    const response = await api.put<Challenge>(`/challenges/${id}/status`, { isActive });
     return response.data;
   }
 };
