@@ -17,6 +17,8 @@ router.post('/register', async (req, res) => {
       jobTitle 
     } = req.body;
     
+    console.log('Register request received:', req.body);
+    
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -33,20 +35,23 @@ router.post('/register', async (req, res) => {
     };
     
     // Add role-specific fields
-    if (role === 'recruiter' && organization) {
+    if (role === 'recruiter') {
       userData.organization = organization;
-      if (jobTitle) userData.jobTitle = jobTitle;
+      userData.jobTitle = jobTitle;
     }
+    
+    console.log('Creating new user with data:', userData);
     
     // Create new user
     const user = new User(userData);
     
     await user.save();
+    console.log('User saved successfully:', user._id);
     
     // Generate JWT token
     const token = jwt.sign(
       { id: user._id, role: user.role }, 
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'defaultsecret', // Fallback secret for development
       { expiresIn: '30d' }
     );
     
@@ -71,7 +76,7 @@ router.post('/register', async (req, res) => {
     });
   } catch (error) {
     console.error('Register error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error during registration', error: error.message });
   }
 });
 
@@ -80,22 +85,28 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
+    console.log('Login attempt for email:', email);
+    
     // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
+      console.log('User not found with email:', email);
       return res.status(400).json({ message: 'Invalid email or password' });
     }
     
     // Check if password is correct
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      console.log('Password mismatch for user:', email);
       return res.status(400).json({ message: 'Invalid email or password' });
     }
+    
+    console.log('Login successful for user:', user._id);
     
     // Generate JWT token
     const token = jwt.sign(
       { id: user._id, role: user.role }, 
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'defaultsecret', // Fallback secret for development
       { expiresIn: '30d' }
     );
     
@@ -124,19 +135,45 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error during login', error: error.message });
   }
 });
 
-// Logout user (clears token on the client side, but we can add it for tracking purposes)
+// Logout user
 router.post('/logout', async (req, res) => {
+  // This endpoint is primarily for client-side token clearing
+  // But we can add server-side logging if needed
+  res.json({ message: 'Logout successful' });
+});
+
+// Verify token route for checking authentication
+router.get('/verify', async (req, res) => {
   try {
-    // In a more advanced implementation, we could add token to a blacklist
-    // or track user logout activity
-    res.json({ message: 'Logout successful' });
+    const token = req.header('x-auth-token');
+    
+    if (!token) {
+      return res.status(401).json({ valid: false, message: 'No token provided' });
+    }
+    
+    const secret = process.env.JWT_SECRET || 'defaultsecret';
+    const decoded = jwt.verify(token, secret);
+    
+    // Check if user still exists in database
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) {
+      return res.status(401).json({ valid: false, message: 'User not found' });
+    }
+    
+    return res.json({ valid: true, user: { 
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role
+    }});
   } catch (error) {
-    console.error('Logout error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Token verification error:', error);
+    return res.status(401).json({ valid: false, message: 'Invalid token' });
   }
 });
 

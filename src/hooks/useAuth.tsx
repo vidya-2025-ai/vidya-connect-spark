@@ -32,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Check if user is already logged in on mount
   useEffect(() => {
     const token = localStorage.getItem('token');
     
@@ -42,17 +43,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const fetchUser = async () => {
       try {
-        const userData = await authService.getCurrentUser();
-        setUser(userData);
+        // First try to verify the token
+        const { valid, user } = await authService.verifyToken();
+        
+        if (valid && user) {
+          setUser(user);
+        } else {
+          // If token is invalid, clear it
+          localStorage.removeItem('token');
+          setError('Session expired. Please login again.');
+          toast({
+            title: "Session Expired",
+            description: "Please login again to continue.",
+            variant: "destructive",
+          });
+        }
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('Error verifying authentication:', error);
         localStorage.removeItem('token');
-        setError('Session expired. Please login again.');
-        toast({
-          title: "Session Expired",
-          description: "Please login again to continue.",
-          variant: "destructive",
-        });
       } finally {
         setLoading(false);
       }
@@ -68,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { token, user } = await authService.login(email, password);
       
-      localStorage.setItem('token', token);
+      // Token is stored in authService
       setUser(user);
       
       // Redirect based on user role
@@ -78,7 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "Login Successful",
         description: `Welcome back, ${user.firstName}!`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
       let errorMsg = 'Failed to login. Please check your credentials and try again.';
       
@@ -102,10 +110,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     
     try {
+      console.log('Registering with data:', userData);
       const { token, user } = await authService.register(userData);
       
-      localStorage.setItem('token', token);
+      // Token is stored in authService
       setUser(user);
+      
+      console.log('Registration successful:', user);
       
       // Redirect based on user role
       navigate(user.role === 'student' ? '/student/dashboard' : '/recruiter/dashboard');
@@ -114,7 +125,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "Registration Successful",
         description: `Welcome to Vidya-Samveda, ${user.firstName}!`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error);
       let errorMsg = 'Failed to register. Please try again.';
       
@@ -134,7 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    authService.logout();
     setUser(null);
     navigate('/');
     toast({

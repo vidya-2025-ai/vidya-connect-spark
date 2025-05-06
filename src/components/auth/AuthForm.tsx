@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -14,8 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/components/ui/use-toast';
 
 interface AuthFormProps {
   type: 'student' | 'organization';
@@ -51,11 +49,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
           lastName,
           email,
           password,
-          role: userRole as 'student' | 'recruiter',
-          organization: type === 'organization' ? organization : undefined,
-          jobTitle: type === 'organization' ? jobTitle : undefined
+          role: userRole,
+          ...(type === 'organization' ? { organization, jobTitle } : {})
         };
         
+        console.log('Submitting registration data:', userData);
         await register(userData);
       }
     } catch (error) {
@@ -75,8 +73,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, isLogin = false }) => {
 
   const getCardDescription = () => {
     if (isLogin) return 'Enter your credentials to access your account';
-    if (type === 'student') return 'Join InternMatch and start your learning journey';
-    return 'Join InternMatch and connect with talented students';
+    if (type === 'student') return 'Join Vidya-Samveda and start your learning journey';
+    return 'Join Vidya-Samveda and connect with talented students';
   };
 
   function getRegistrationLink() {

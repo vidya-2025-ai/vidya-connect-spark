@@ -1,6 +1,7 @@
 
 import axios, { AxiosInstance } from 'axios';
 
+// API base URL - update this to match your backend server URL
 const API_URL = 'http://localhost:5000/api';
 
 // Create axios instance
@@ -23,12 +24,18 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Add response interceptor for error handling
+// Global error handler
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Add global error handling logic here
-    console.error('API Error:', error.response?.data || error.message);
+    console.error('API Error:', error.response || error);
+    
+    // Handle authentication errors
+    if (error.response && error.response.status === 401) {
+      // Clear token and redirect to login if unauthorized
+      localStorage.removeItem('token');
+    }
+    
     return Promise.reject(error);
   }
 );
