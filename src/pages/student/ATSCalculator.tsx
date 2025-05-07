@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import StudentSidebar from '@/components/dashboard/StudentSidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,9 @@ interface ATSScore {
 }
 
 const ATSCalculator = () => {
+  const [searchParams] = useSearchParams();
+  const opportunityIdFromUrl = searchParams.get('opportunityId');
+
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [selectedResume, setSelectedResume] = useState<string>('');
@@ -38,9 +41,14 @@ const ATSCalculator = () => {
         const resumesData = await resumeService.getAllResumes();
         setResumes(resumesData);
 
-        // Fetch opportunities instead of ATS parameters
+        // Fetch opportunities
         const opportunitiesData = await opportunityService.getAllOpportunities();
         setOpportunities(opportunitiesData);
+        
+        // If opportunity ID is provided in URL, set it as selected
+        if (opportunityIdFromUrl) {
+          setSelectedOpportunity(opportunityIdFromUrl);
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
         toast({
@@ -54,7 +62,14 @@ const ATSCalculator = () => {
     };
 
     fetchData();
-  }, []);
+  }, [opportunityIdFromUrl]);
+
+  // Auto-calculate score when both resume and opportunity are selected
+  useEffect(() => {
+    if (selectedResume && selectedOpportunity && opportunityIdFromUrl) {
+      handleCalculateScore();
+    }
+  }, [selectedResume, selectedOpportunity]);
 
   const handleCalculateScore = async () => {
     if (!selectedResume || !selectedOpportunity) {

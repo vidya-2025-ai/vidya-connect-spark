@@ -13,12 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, MapPin, Calendar, Briefcase, CheckCircle2, CircleDollarSign } from "lucide-react";
+import { Search, MapPin, Calendar, Briefcase, CheckCircle2, CircleDollarSign, FileCheck } from "lucide-react";
 import { opportunityService } from '@/services/api/opportunityService';
 import { Opportunity } from '@/services/api/types';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from '@/components/ui/use-toast';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const ExploreOpportunities = () => {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
@@ -28,6 +28,7 @@ const ExploreOpportunities = () => {
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const skillOptions = [
     "React", "JavaScript", "TypeScript", "Node.js", 
@@ -76,6 +77,11 @@ const ExploreOpportunities = () => {
         ? prev.filter(s => s !== skill)
         : [...prev, skill]
     );
+  };
+
+  // Add function to check ATS score for an opportunity
+  const handleCheckATSScore = (opportunityId: string) => {
+    navigate(`/student/ats-calculator?opportunityId=${opportunityId}`);
   };
 
   return (
@@ -252,9 +258,20 @@ const ExploreOpportunities = () => {
                             <p className="text-xs text-gray-500">
                               Posted on {new Date(opportunity.createdAt).toLocaleDateString()}
                             </p>
-                            <Link to={`/student/opportunities/${opportunity._id}`}>
-                              <Button>View Details</Button>
-                            </Link>
+                            <div className="flex space-x-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleCheckATSScore(opportunity._id)}
+                                className="flex items-center gap-1"
+                              >
+                                <FileCheck className="h-4 w-4" />
+                                Check ATS Score
+                              </Button>
+                              <Link to={`/student/opportunities/${opportunity._id}`}>
+                                <Button size="sm">View Details</Button>
+                              </Link>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
