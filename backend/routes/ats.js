@@ -3,6 +3,7 @@ const express = require('express');
 const auth = require('../middleware/auth');
 const ATSParameter = require('../models/ATSParameter');
 const Resume = require('../models/Resume');
+const Opportunity = require('../models/Opportunity');
 const router = express.Router();
 
 // Get ATS parameters for a recruiter
@@ -177,6 +178,123 @@ router.post('/calculate-score', auth, async (req, res) => {
       details: {
         matched: score,
         total: maxScore
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// New route: Calculate ATS score for a resume against an opportunity
+router.post('/calculate-opportunity-score', auth, async (req, res) => {
+  try {
+    const { resumeId, opportunityId } = req.body;
+    
+    const resume = await Resume.findById(resumeId);
+    if (!resume) {
+      return res.status(404).json({ message: 'Resume not found' });
+    }
+    
+    // Ensure user owns this resume if they're a student
+    if (req.user.role === 'student' && resume.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    
+    const opportunity = await Opportunity.findById(opportunityId);
+    if (!opportunity) {
+      return res.status(404).json({ message: 'Opportunity not found' });
+    }
+    
+    // Calculate ATS score based on opportunity requirements
+    let score = 0;
+    let maxScore = 0;
+    
+    // Create dynamic ATS parameters based on the opportunity
+    const opportunitySkills = opportunity.skillsRequired.map(skill => ({
+      skill,
+      weight: 5 // Default weight
+    }));
+    
+    // Extract keywords from opportunity description and title
+    const descriptionWords = opportunity.description
+      .toLowerCase()
+      .replace(/[^\w\s]/g, '')
+      .split(/\s+/)
+      .filter(word => word.length > 4); // Only words longer than 4 chars
+    
+    // Remove duplicate words and transform to keyword objects
+    const opportunityKeywords = [...new Set(descriptionWords)].map(keyword => ({
+      keyword,
+      weight: 2 // Default weight
+    }));
+    
+    // Check for required skills match
+    opportunitySkills.forEach(reqSkill => {
+      maxScore += reqSkill.weight;
+      if (resume.skills.includes(reqSkill.skill)) {
+        score += reqSkill.weight;
+      }
+    });
+    
+    // Check for keywords in resume
+    opportunityKeywords.forEach(keyword => {
+      maxScore += keyword.weight;
+      
+      // Check keywords in various sections (simplified approach)
+      const resumeText = JSON.stringify(resume).toLowerCase();
+      if (resumeText.includes(keyword.keyword.toLowerCase())) {
+        score += keyword.weight;
+      }
+    });
+    
+    // Check for education match if required by opportunity
+    if (opportunity.experienceLevel === 'Entry-Level') {
+      maxScore += 3;
+      if (resume.education && resume.education.length > 0) {
+        score += 3;
+      }
+    } else if (opportunity.experienceLevel === 'Advanced' || opportunity.experienceLevel === 'Senior') {
+      // Check for work experience
+      maxScore += 5;
+      if (resume.experience && resume.experience.length > 0) {
+        const totalYearsExperience = resume.experience.reduce((total, exp) => {
+          // Simple calculation, could be more sophisticated in a real app
+          const startDate = new Date(exp.startDate);
+          const endDate = exp.current ? new Date() : new Date(exp.endDate);
+          const years = (endDate - startDate) / (1000 * 60 * 60 * 24 * 365);
+          return total + years;
+        }, 0);
+        
+        // Score based on years of experience
+        if (totalYearsExperience >= 5) {
+          score += 5;
+        } else if (totalYearsExperience >= 3) {
+          score += 3;
+        } else if (totalYearsExperience >= 1) {
+          score += 1;
+        }
+      }
+    }
+    
+    // Basic format check
+    maxScore += 2;
+    if (resume.personalInfo && resume.personalInfo.email && resume.personalInfo.phone) {
+      score += 2;
+    }
+    
+    const finalScore = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+    
+    // Update the resume with the ATS score
+    resume.atsScore = finalScore;
+    await resume.save();
+    
+    res.json({ 
+      score: finalScore,
+      details: {
+        matched: score,
+        total: maxScore,
+        opportunityTitle: opportunity.title
       }
     });
   } catch (error) {

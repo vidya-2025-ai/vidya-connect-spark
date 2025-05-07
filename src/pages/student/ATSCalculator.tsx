@@ -7,10 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { atsService } from '@/services/api/atsService';
 import { resumeService } from '@/services/api/resumeService';
-import { Resume, ATSParameter } from '@/services/api/types';
+import { opportunityService } from '@/services/api/opportunityService';
+import { Resume, Opportunity } from '@/services/api/types';
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from '@/components/ui/use-toast';
-import { FileCheck, AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import { FileCheck, AlertCircle, CheckCircle, XCircle, Briefcase } from "lucide-react";
 
 interface ATSScore {
   score: number;
@@ -22,9 +23,9 @@ interface ATSScore {
 
 const ATSCalculator = () => {
   const [resumes, setResumes] = useState<Resume[]>([]);
-  const [parameters, setParameters] = useState<ATSParameter[]>([]);
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [selectedResume, setSelectedResume] = useState<string>('');
-  const [selectedParameter, setSelectedParameter] = useState<string>('');
+  const [selectedOpportunity, setSelectedOpportunity] = useState<string>('');
   const [score, setScore] = useState<ATSScore | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -37,9 +38,9 @@ const ATSCalculator = () => {
         const resumesData = await resumeService.getAllResumes();
         setResumes(resumesData);
 
-        // Fetch ATS parameters
-        const parametersData = await atsService.getParameters();
-        setParameters(parametersData);
+        // Fetch opportunities instead of ATS parameters
+        const opportunitiesData = await opportunityService.getAllOpportunities();
+        setOpportunities(opportunitiesData);
       } catch (error) {
         console.error('Error fetching data:', error);
         toast({
@@ -56,10 +57,10 @@ const ATSCalculator = () => {
   }, []);
 
   const handleCalculateScore = async () => {
-    if (!selectedResume || !selectedParameter) {
+    if (!selectedResume || !selectedOpportunity) {
       toast({
         title: "Error",
-        description: "Please select both a resume and job criteria",
+        description: "Please select both a resume and an opportunity",
         variant: "destructive"
       });
       return;
@@ -67,7 +68,9 @@ const ATSCalculator = () => {
 
     try {
       setIsCalculating(true);
-      const result = await atsService.calculateScore(selectedResume, selectedParameter);
+      // We're now passing the opportunity ID instead of parameter ID
+      // The backend will need to extract the relevant criteria from the opportunity
+      const result = await atsService.calculateScoreForOpportunity(selectedResume, selectedOpportunity);
       setScore(result);
     } catch (error) {
       console.error('Error calculating ATS score:', error);
@@ -86,7 +89,7 @@ const ATSCalculator = () => {
       return (
         <div className="flex items-center text-green-600">
           <CheckCircle className="mr-2 h-5 w-5" />
-          <span>Excellent match! Your resume is well-aligned with the job criteria.</span>
+          <span>Excellent match! Your resume is well-aligned with this opportunity.</span>
         </div>
       );
     } else if (score >= 60) {
@@ -100,7 +103,7 @@ const ATSCalculator = () => {
       return (
         <div className="flex items-center text-red-600">
           <XCircle className="mr-2 h-5 w-5" />
-          <span>Your resume needs significant improvements to match this job.</span>
+          <span>Your resume needs significant improvements to match this opportunity.</span>
         </div>
       );
     }
@@ -150,7 +153,7 @@ const ATSCalculator = () => {
               <CardHeader>
                 <CardTitle>Calculate Your ATS Score</CardTitle>
                 <CardDescription>
-                  See how well your resume matches job criteria by calculating your ATS score
+                  See how well your resume matches specific opportunities by calculating your ATS score
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -179,21 +182,21 @@ const ATSCalculator = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium">Select Job Criteria</label>
+                    <label className="block text-sm font-medium">Select Opportunity</label>
                     <Select
-                      value={selectedParameter}
-                      onValueChange={setSelectedParameter}
+                      value={selectedOpportunity}
+                      onValueChange={setSelectedOpportunity}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select job criteria" />
+                        <SelectValue placeholder="Select an opportunity" />
                       </SelectTrigger>
                       <SelectContent>
-                        {parameters.length === 0 ? (
-                          <SelectItem value="no_criteria" disabled>No criteria available</SelectItem>
+                        {opportunities.length === 0 ? (
+                          <SelectItem value="no_opportunities" disabled>No opportunities available</SelectItem>
                         ) : (
-                          parameters.map((param) => (
-                            <SelectItem key={param._id} value={param._id}>
-                              {param.title}
+                          opportunities.map((opportunity) => (
+                            <SelectItem key={opportunity._id} value={opportunity._id}>
+                              {opportunity.title}
                             </SelectItem>
                           ))
                         )}
@@ -203,7 +206,7 @@ const ATSCalculator = () => {
 
                   <Button
                     onClick={handleCalculateScore}
-                    disabled={isCalculating || !selectedResume || !selectedParameter}
+                    disabled={isCalculating || !selectedResume || !selectedOpportunity}
                   >
                     {isCalculating ? 'Calculating...' : 'Calculate Score'}
                   </Button>
@@ -217,7 +220,7 @@ const ATSCalculator = () => {
               <CardHeader>
                 <CardTitle>Your ATS Score</CardTitle>
                 <CardDescription>
-                  How well your resume matches the selected job criteria
+                  How well your resume matches the selected opportunity
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -253,10 +256,10 @@ const ATSCalculator = () => {
                   <div className="border-t pt-4">
                     <h4 className="font-medium mb-2">Recommendations</h4>
                     <ul className="list-disc pl-5 space-y-1 text-sm">
-                      <li>Include more relevant keywords mentioned in the job description</li>
+                      <li>Include more relevant keywords mentioned in the opportunity description</li>
                       <li>Format your resume with clear sections and consistent styling</li>
                       <li>Quantify achievements with specific numbers and metrics</li>
-                      <li>Customize your resume for each specific job application</li>
+                      <li>Customize your resume for this specific opportunity</li>
                     </ul>
                   </div>
                 </div>
@@ -267,10 +270,10 @@ const ATSCalculator = () => {
           {!score && !isCalculating && !isLoading && (
             <Card>
               <CardContent className="flex flex-col items-center justify-center text-center p-6">
-                <FileCheck className="h-16 w-16 text-gray-400 mb-4" />
+                <Briefcase className="h-16 w-16 text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium mb-2">No Score Available</h3>
                 <p className="text-gray-500 mb-4">
-                  Select a resume and job criteria above to calculate your ATS score
+                  Select a resume and opportunity above to calculate your ATS score
                 </p>
               </CardContent>
             </Card>

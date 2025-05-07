@@ -29,6 +29,15 @@ export const atsService = {
   calculateScore: async (resumeId: string, parameterId: string): Promise<ATSScore> => {
     const response = await api.post<ATSScore>('/ats/calculate-score', { resumeId, parameterId });
     return response.data;
+  },
+  
+  // New method to calculate score based on opportunity
+  calculateScoreForOpportunity: async (resumeId: string, opportunityId: string): Promise<ATSScore> => {
+    const response = await api.post<ATSScore>('/ats/calculate-opportunity-score', { 
+      resumeId, 
+      opportunityId 
+    });
+    return response.data;
   }
 };
 
