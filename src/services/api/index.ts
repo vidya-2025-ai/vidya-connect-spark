@@ -1,7 +1,6 @@
 
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from 'axios';
 
-// API base URL - update this to match your backend server URL
 const API_URL = 'http://localhost:5000/api';
 
 // Create axios instance
@@ -10,7 +9,7 @@ const api: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15000 // 15 seconds timeout
+  timeout: 15000, // Timeout after 15 seconds
 });
 
 // Add token to requests if available
@@ -22,73 +21,62 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error('API request error:', error);
+    return Promise.reject(error);
+  }
 );
 
-// Global error handler
+// Handle response errors
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Check if error is a network error (like backend server not running)
-    if (error.code === 'ERR_NETWORK') {
-      console.error('Network error: Could not connect to backend server');
+  (response) => {
+    return response;
+  },
+  (error: AxiosError) => {
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error('API error response:', error.response.status, error.response.data);
       
-      // Return mock data for development when backend is not available
-      if (process.env.NODE_ENV === 'development') {
-        const url = error.config?.url;
-        
-        // Mock resume data for ATSCalculator during development
-        if (url === '/resumes' || url?.includes('/resumes')) {
-          console.warn('Returning mock resume data since backend is unavailable');
-          return Promise.resolve({ 
-            data: [
-              { _id: 'mock-resume-1', title: 'My Professional Resume', user: 'mock-user-1', skills: ['React', 'TypeScript', 'Node.js'] },
-              { _id: 'mock-resume-2', title: 'Technical Resume', user: 'mock-user-1', skills: ['Java', 'Spring', 'Docker'] },
-            ] 
-          });
-        }
-        
-        // Mock opportunities data
-        if (url === '/opportunities' || url?.includes('/opportunities')) {
-          console.warn('Returning mock opportunities data since backend is unavailable');
-          return Promise.resolve({ 
-            data: [
-              { _id: 'mock-opp-1', title: 'Frontend Developer Internship', type: 'Internship', skillsRequired: ['React', 'CSS'], description: 'Exciting opportunity for frontend development with React' },
-              { _id: 'mock-opp-2', title: 'Backend Engineer', type: 'Full-time', skillsRequired: ['Node.js', 'Express'], description: 'Build robust backend systems with our engineering team' },
-              { _id: 'mock-opp-3', title: 'Data Science Intern', type: 'Internship', skillsRequired: ['Python', 'SQL'], description: 'Work on interesting data problems with our data team' },
-            ] 
-          });
-        }
-        
-        // Mock ATS calculation results
-        if (url?.includes('/calculate-opportunity-score')) {
-          console.warn('Returning mock ATS score since backend is unavailable');
-          return Promise.resolve({ 
-            data: {
-              score: 75,
-              details: {
-                matched: 15,
-                total: 20,
-                opportunityTitle: 'Mock Opportunity'
-              }
-            } 
-          });
+      // Handle token expiration
+      if (error.response.status === 401) {
+        // Check if it's not a login/register endpoint
+        const url = error.config?.url || '';
+        if (!url.includes('auth/login') && !url.includes('auth/register')) {
+          console.log('Token expired or invalid, redirecting to login');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          
+          // Redirect to login page after a short delay
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 100);
         }
       }
-    }
-    
-    console.error('API Error:', error.response || error);
-    
-    // Handle authentication errors
-    if (error.response && error.response.status === 401) {
-      // Clear token and redirect to login if unauthorized
-      localStorage.removeItem('token');
-      // We don't forcefully redirect here to avoid disrupting the user experience
-      console.warn('Authentication error: Token invalid or expired');
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('Network error: Could not connect to backend server');
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error('Error setting up request:', error.message);
     }
     
     return Promise.reject(error);
   }
 );
+
+// Function to set auth token
+export const setAuthToken = (token: string | null) => {
+  if (token) {
+    localStorage.setItem('token', token);
+  } else {
+    localStorage.removeItem('token');
+  }
+};
+
+// Function to get current auth token
+export const getAuthToken = (): string | null => {
+  return localStorage.getItem('token');
+};
 
 export default api;

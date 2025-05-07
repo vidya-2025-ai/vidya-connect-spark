@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StudentSidebar from '@/components/dashboard/StudentSidebar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -48,6 +49,7 @@ const ExploreOpportunities = () => {
         if (selectedSkills.length > 0) filters.skills = selectedSkills;
         
         const data = await opportunityService.getAllOpportunities(filters);
+        console.log("Fetched opportunities:", data); // Debug log
         setOpportunities(data);
         setError(null);
       } catch (err) {
@@ -79,7 +81,12 @@ const ExploreOpportunities = () => {
     );
   };
 
-  // Add function to check ATS score for an opportunity
+  // Function to handle viewing opportunity details
+  const viewOpportunityDetails = (opportunityId: string) => {
+    navigate(`/student/opportunities/${opportunityId}`);
+  };
+
+  // Function to check ATS score for an opportunity
   const handleCheckATSScore = (opportunityId: string) => {
     navigate(`/student/ats-calculator?opportunityId=${opportunityId}`);
   };
@@ -197,7 +204,7 @@ const ExploreOpportunities = () => {
                 ) : (
                   <div className="space-y-4">
                     {opportunities.map((opportunity) => (
-                      <Card key={opportunity._id} className="hover:shadow-md transition-shadow">
+                      <Card key={opportunity._id || opportunity.id} className="hover:shadow-md transition-shadow">
                         <CardHeader>
                           <div className="flex justify-between">
                             <div>
@@ -262,15 +269,18 @@ const ExploreOpportunities = () => {
                               <Button 
                                 variant="outline" 
                                 size="sm" 
-                                onClick={() => handleCheckATSScore(opportunity._id)}
+                                onClick={() => handleCheckATSScore(opportunity._id || opportunity.id)}
                                 className="flex items-center gap-1"
                               >
                                 <FileCheck className="h-4 w-4" />
                                 Check ATS Score
                               </Button>
-                              <Link to={`/student/opportunities/${opportunity._id}`}>
-                                <Button size="sm">View Details</Button>
-                              </Link>
+                              <Button 
+                                size="sm"
+                                onClick={() => viewOpportunityDetails(opportunity._id || opportunity.id)}
+                              >
+                                View Details
+                              </Button>
                             </div>
                           </div>
                         </CardContent>
