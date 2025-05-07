@@ -34,20 +34,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Check if user is already logged in on mount
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        setLoading(false);
+        return;
+      }
 
-    const fetchUser = async () => {
       try {
-        // First try to verify the token
+        // Verify the token
         const { valid, user } = await authService.verifyToken();
         
         if (valid && user) {
           setUser(user);
+          console.log('User authenticated:', user.id);
         } else {
           // If token is invalid, clear it
           localStorage.removeItem('token');
@@ -66,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    fetchUser();
+    checkAuth();
   }, [toast]);
 
   const login = async (email: string, password: string) => {
@@ -78,6 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Token is stored in authService
       setUser(user);
+      console.log('Login successful for:', user.email);
       
       // Redirect based on user role
       navigate(user.role === 'student' ? '/student/dashboard' : '/recruiter/dashboard');

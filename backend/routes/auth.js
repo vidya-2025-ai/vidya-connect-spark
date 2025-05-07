@@ -49,11 +49,14 @@ router.post('/register', async (req, res) => {
     console.log('User saved successfully:', user._id);
     
     // Generate JWT token
+    const jwtSecret = process.env.JWT_SECRET || 'defaultsecret';
     const token = jwt.sign(
       { id: user._id, role: user.role }, 
-      process.env.JWT_SECRET || 'defaultsecret', // Fallback secret for development
+      jwtSecret,
       { expiresIn: '30d' }
     );
+    
+    console.log('JWT token generated for new user');
     
     // Prepare response data removing sensitive information
     const responseUser = {
@@ -104,11 +107,14 @@ router.post('/login', async (req, res) => {
     console.log('Login successful for user:', user._id);
     
     // Generate JWT token
+    const jwtSecret = process.env.JWT_SECRET || 'defaultsecret';
     const token = jwt.sign(
       { id: user._id, role: user.role }, 
-      process.env.JWT_SECRET || 'defaultsecret', // Fallback secret for development
+      jwtSecret,
       { expiresIn: '30d' }
     );
+    
+    console.log('JWT token generated for login');
     
     // Update lastActive
     user.lastActive = Date.now();
@@ -143,6 +149,7 @@ router.post('/login', async (req, res) => {
 router.post('/logout', async (req, res) => {
   // This endpoint is primarily for client-side token clearing
   // But we can add server-side logging if needed
+  console.log('User logged out');
   res.json({ message: 'Logout successful' });
 });
 
@@ -152,25 +159,38 @@ router.get('/verify', async (req, res) => {
     const token = req.header('x-auth-token');
     
     if (!token) {
+      console.log('Verify endpoint called without token');
       return res.status(401).json({ valid: false, message: 'No token provided' });
     }
     
-    const secret = process.env.JWT_SECRET || 'defaultsecret';
-    const decoded = jwt.verify(token, secret);
+    const jwtSecret = process.env.JWT_SECRET || 'defaultsecret';
+    const decoded = jwt.verify(token, jwtSecret);
+    
+    console.log('Token verification attempt for user ID:', decoded.id);
     
     // Check if user still exists in database
     const user = await User.findById(decoded.id).select('-password');
     if (!user) {
+      console.log('User not found during token verification');
       return res.status(401).json({ valid: false, message: 'User not found' });
     }
     
-    return res.json({ valid: true, user: { 
-      id: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      role: user.role
-    }});
+    console.log('Token verified successfully for user:', user._id);
+    
+    return res.json({ 
+      valid: true, 
+      user: { 
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        ...(user.role === 'recruiter' ? { 
+          organization: user.organization,
+          jobTitle: user.jobTitle 
+        } : {})
+      }
+    });
   } catch (error) {
     console.error('Token verification error:', error);
     return res.status(401).json({ valid: false, message: 'Invalid token' });

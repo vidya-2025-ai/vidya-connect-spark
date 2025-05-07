@@ -6,6 +6,11 @@ exports.likePost = async (req, res) => {
   try {
     const { postId } = req.params;
     
+    // Ensure user is authenticated
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
     // Find post
     const post = await Post.findById(postId);
     if (!post) {
@@ -21,12 +26,14 @@ exports.likePost = async (req, res) => {
     post.likes.push(req.user.id);
     await post.save();
     
+    console.log(`User ${req.user.id} liked post ${postId}`);
+    
     res.json({
       id: post._id,
       likes: post.likes.length
     });
   } catch (error) {
-    console.error(error);
+    console.error('Like post error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -35,6 +42,11 @@ exports.likePost = async (req, res) => {
 exports.unlikePost = async (req, res) => {
   try {
     const { postId } = req.params;
+    
+    // Ensure user is authenticated
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
     
     // Find post
     const post = await Post.findById(postId);
@@ -52,12 +64,14 @@ exports.unlikePost = async (req, res) => {
     post.likes.splice(likeIndex, 1);
     await post.save();
     
+    console.log(`User ${req.user.id} unliked post ${postId}`);
+    
     res.json({
       id: post._id,
       likes: post.likes.length
     });
   } catch (error) {
-    console.error(error);
+    console.error('Unlike post error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

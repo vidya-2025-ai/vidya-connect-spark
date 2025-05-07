@@ -7,12 +7,13 @@ module.exports = function(req, res, next) {
   
   // Check if no token
   if (!token) {
+    console.log('No authentication token provided');
     return res.status(401).json({ message: 'No token, authorization denied' });
   }
   
   // Verify token
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'defaultsecret');
     
     req.user = decoded;
     next();

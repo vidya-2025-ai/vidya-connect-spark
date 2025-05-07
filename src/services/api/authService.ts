@@ -15,6 +15,7 @@ export const authService = {
     // Store token in local storage
     if (response.data.token) {
       localStorage.setItem('token', response.data.token);
+      console.log('Token stored successfully');
     }
     
     return response.data;
@@ -27,18 +28,24 @@ export const authService = {
     // Store token in local storage
     if (response.data.token) {
       localStorage.setItem('token', response.data.token);
+      console.log('Token stored after registration');
     }
     
     return response.data;
   },
   
   logout: async (): Promise<void> => {
-    // Call backend logout endpoint if needed
-    await api.post<void>('/auth/logout');
-    
-    // Clear local storage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    try {
+      // Call backend logout endpoint if needed
+      await api.post<void>('/auth/logout');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      // Ensure local storage is cleared even if API call fails
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      console.log('User logged out, token removed');
+    }
   },
   
   getCurrentUser: async (): Promise<User> => {
@@ -62,8 +69,13 @@ export const authService = {
   },
   
   verifyToken: async (): Promise<{ valid: boolean; user?: User }> => {
-    const response = await api.get<{ valid: boolean; user?: User }>('/auth/verify');
-    return response.data;
+    try {
+      const response = await api.get<{ valid: boolean; user?: User }>('/auth/verify');
+      return response.data;
+    } catch (error) {
+      console.error('Token verification error:', error);
+      return { valid: false };
+    }
   }
 };
 
