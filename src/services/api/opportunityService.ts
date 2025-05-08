@@ -97,8 +97,8 @@ export const opportunityService = {
     } catch (error) {
       console.error('Error fetching opportunities:', error);
       console.warn('Returning mock opportunities data since backend is unavailable');
-      // Return mock data if backend is unavailable
-      return mockOpportunities.map(mapToOpportunity);
+      // Return mock data if backend is unavailable, but make sure to map each item
+      return mockOpportunities.map(opp => mapToOpportunity(opp));
     }
   },
   
@@ -128,7 +128,7 @@ export const opportunityService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching opportunity details:', error);
-      // Return mock data if backend is unavailable
+      // Return mock data if backend is unavailable, making sure to map it first
       const mockOpportunity = mockOpportunities.find(opp => opp._id === id || opp.id === id);
       if (mockOpportunity) {
         return mapToOpportunity(mockOpportunity) as OpportunityWithStats;
@@ -163,8 +163,8 @@ export const opportunityService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching recommended opportunities:', error);
-      // Return mock data if backend is unavailable
-      return mockOpportunities.slice(0, 1);
+      // Return mock data if backend is unavailable, making sure to map it correctly
+      return mockOpportunities.slice(0, 1).map(opp => mapToOpportunity(opp));
     }
   },
   
