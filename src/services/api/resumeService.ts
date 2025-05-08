@@ -6,6 +6,7 @@ import { Resume } from './types';
 const mockResumes = [
   {
     _id: "resume1",
+    id: "resume1", // Adding id to match interface
     title: "Software Developer Resume",
     personalInfo: {
       name: "John Doe",
@@ -48,6 +49,22 @@ const mockResumes = [
   }
 ];
 
+// Helper function to ensure objects match the Resume interface
+const mapToResume = (resume: any): Resume => {
+  return {
+    id: resume._id || resume.id,
+    _id: resume._id || resume.id,
+    title: resume.title,
+    personalInfo: resume.personalInfo,
+    education: resume.education || [],
+    experience: resume.experience || [],
+    skills: resume.skills || [],
+    projects: resume.projects || [],
+    certifications: resume.certifications || [],
+    lastUpdated: resume.lastUpdated || resume.updatedAt || new Date().toISOString()
+  };
+};
+
 export const resumeService = {
   getAllResumes: async (): Promise<Resume[]> => {
     try {
@@ -57,7 +74,7 @@ export const resumeService = {
       console.error('Error fetching resumes:', error);
       console.warn('Returning mock resume data since backend is unavailable');
       // Return mock data if backend is unavailable
-      return mockResumes;
+      return mockResumes.map(mapToResume);
     }
   },
   
@@ -68,9 +85,9 @@ export const resumeService = {
     } catch (error) {
       console.error('Error fetching resume by id:', error);
       // Return mock data if backend is unavailable
-      const mockResume = mockResumes.find(resume => resume._id === id);
+      const mockResume = mockResumes.find(resume => resume._id === id || resume.id === id);
       if (mockResume) {
-        return mockResume;
+        return mapToResume(mockResume);
       }
       throw error;
     }

@@ -1,6 +1,64 @@
-
 import api from './index';
 import { Opportunity, PaginatedResponse, ApplicationStats } from './types';
+
+// Sample opportunity data for mock responses
+const mockOpportunities = [
+  {
+    _id: "opp1",
+    id: "opp1", // Adding id to match interface
+    title: "Frontend Developer Intern",
+    description: "Join our team to build modern web applications using React and TypeScript",
+    organization: "Tech Innovations",
+    type: "Internship",
+    duration: "3 months",
+    location: "Remote",
+    skillsRequired: ["React", "TypeScript", "CSS"],
+    deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    stipend: { amount: 10000, currency: "INR" },
+    createdAt: new Date().toISOString(),
+    isActive: true,
+    requirements: ["Strong JavaScript knowledge", "Experience with React", "Good problem-solving skills"],
+    tags: [] // Adding empty tags array to match interface
+  },
+  {
+    _id: "opp2",
+    id: "opp2", // Adding id to match interface
+    title: "Data Analyst",
+    description: "Work with our data team to derive insights from large datasets",
+    organization: "Data Solutions Inc.",
+    type: "Full-time",
+    duration: "Permanent",
+    location: "Bangalore",
+    skillsRequired: ["Python", "SQL", "Data Analysis"],
+    deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+    stipend: { amount: 25000, currency: "INR" },
+    createdAt: new Date().toISOString(),
+    isActive: true,
+    requirements: ["Statistics background", "Experience with data visualization", "Python coding skills"],
+    tags: [] // Adding empty tags array to match interface
+  }
+];
+
+// Helper function to ensure objects match the Opportunity interface
+const mapToOpportunity = (opportunity: any): Opportunity => {
+  return {
+    id: opportunity._id || opportunity.id,
+    _id: opportunity._id || opportunity.id,
+    title: opportunity.title,
+    organization: opportunity.organization,
+    description: opportunity.description,
+    requirements: opportunity.requirements || [],
+    location: opportunity.location,
+    type: opportunity.type,
+    duration: opportunity.duration,
+    stipend: opportunity.stipend,
+    deadline: opportunity.deadline,
+    skillsRequired: opportunity.skillsRequired || [],
+    tags: opportunity.tags || [],
+    isActive: opportunity.isActive !== undefined ? opportunity.isActive : true,
+    createdAt: opportunity.createdAt || new Date().toISOString()
+  };
+};
 
 export interface OpportunityFilters {
   search?: string;
@@ -19,40 +77,6 @@ export interface OpportunityWithStats extends Opportunity {
   applicationStats?: ApplicationStats;
 }
 
-// Sample opportunity data for mock responses
-const mockOpportunities = [
-  {
-    _id: "opp1",
-    title: "Frontend Developer Intern",
-    description: "Join our team to build modern web applications using React and TypeScript",
-    organization: "Tech Innovations",
-    type: "Internship",
-    duration: "3 months",
-    location: "Remote",
-    skillsRequired: ["React", "TypeScript", "CSS"],
-    deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    stipend: { amount: 10000, currency: "INR" },
-    createdAt: new Date().toISOString(),
-    isActive: true,
-    requirements: ["Strong JavaScript knowledge", "Experience with React", "Good problem-solving skills"]
-  },
-  {
-    _id: "opp2",
-    title: "Data Analyst",
-    description: "Work with our data team to derive insights from large datasets",
-    organization: "Data Solutions Inc.",
-    type: "Full-time",
-    duration: "Permanent",
-    location: "Bangalore",
-    skillsRequired: ["Python", "SQL", "Data Analysis"],
-    deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-    stipend: { amount: 25000, currency: "INR" },
-    createdAt: new Date().toISOString(),
-    isActive: true,
-    requirements: ["Statistics background", "Experience with data visualization", "Python coding skills"]
-  }
-];
-
 export const opportunityService = {
   getAllOpportunities: async (filters: OpportunityFilters = {}): Promise<Opportunity[]> => {
     try {
@@ -67,7 +91,7 @@ export const opportunityService = {
       console.error('Error fetching opportunities:', error);
       console.warn('Returning mock opportunities data since backend is unavailable');
       // Return mock data if backend is unavailable
-      return mockOpportunities;
+      return mockOpportunities.map(mapToOpportunity);
     }
   },
   
@@ -98,9 +122,9 @@ export const opportunityService = {
     } catch (error) {
       console.error('Error fetching opportunity details:', error);
       // Return mock data if backend is unavailable
-      const mockOpportunity = mockOpportunities.find(opp => opp._id === id);
+      const mockOpportunity = mockOpportunities.find(opp => opp._id === id || opp.id === id);
       if (mockOpportunity) {
-        return mockOpportunity as OpportunityWithStats;
+        return mapToOpportunity(mockOpportunity) as OpportunityWithStats;
       }
       throw error;
     }
