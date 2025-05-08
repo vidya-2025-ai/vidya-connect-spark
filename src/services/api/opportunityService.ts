@@ -1,3 +1,4 @@
+
 import api from './index';
 import { Opportunity, PaginatedResponse, ApplicationStats } from './types';
 
@@ -9,7 +10,7 @@ const mockOpportunities = [
     title: "Frontend Developer Intern",
     description: "Join our team to build modern web applications using React and TypeScript",
     organization: "Tech Innovations",
-    type: "Internship",
+    type: "Internship", // Ensuring this is one of the allowed types
     duration: "3 months",
     location: "Remote",
     skillsRequired: ["React", "TypeScript", "CSS"],
@@ -26,7 +27,7 @@ const mockOpportunities = [
     title: "Data Analyst",
     description: "Work with our data team to derive insights from large datasets",
     organization: "Data Solutions Inc.",
-    type: "Full-time",
+    type: "Full-time", // Ensuring this is one of the allowed types
     duration: "Permanent",
     location: "Bangalore",
     skillsRequired: ["Python", "SQL", "Data Analysis"],
@@ -41,6 +42,12 @@ const mockOpportunities = [
 
 // Helper function to ensure objects match the Opportunity interface
 const mapToOpportunity = (opportunity: any): Opportunity => {
+  // Ensure type is one of the allowed values
+  const validTypes = ["Internship", "Research", "Volunteer", "Part-time", "Full-time"];
+  const type = validTypes.includes(opportunity.type) ? 
+    opportunity.type as "Internship" | "Research" | "Volunteer" | "Part-time" | "Full-time" : 
+    "Internship"; // Default to "Internship" if invalid type
+    
   return {
     id: opportunity._id || opportunity.id,
     _id: opportunity._id || opportunity.id,
@@ -49,7 +56,7 @@ const mapToOpportunity = (opportunity: any): Opportunity => {
     description: opportunity.description,
     requirements: opportunity.requirements || [],
     location: opportunity.location,
-    type: opportunity.type,
+    type: type,
     duration: opportunity.duration,
     stipend: opportunity.stipend,
     deadline: opportunity.deadline,
