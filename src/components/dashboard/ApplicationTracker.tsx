@@ -1,182 +1,136 @@
 
-import React, { useEffect, useState } from 'react';
-import { 
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle 
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Calendar, 
-  CheckCircle,
-  Clock,
-  XCircle,
-  AlertCircle
-} from 'lucide-react';
-import { applicationService } from '@/services/api/applicationService';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CalendarIcon, FileTextIcon } from 'lucide-react';
 import { Application } from '@/services/api/types';
-import { Skeleton } from '@/components/ui/skeleton';
+import applicationService from '@/services/api/applicationService';
 
-const ApplicationTracker = () => {
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const ApplicationTracker: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('all');
+  
+  const { data: applications, isLoading } = useQuery({
+    queryKey: ['studentApplications', activeTab],
+    queryFn: () => applicationService.getStudentApplications({ 
+      status: activeTab !== 'all' ? activeTab : undefined 
+    }),
+  });
+  
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
 
-  useEffect(() => {
-    const fetchApplications = async () => {
-      try {
-        setIsLoading(true);
-        const data = await applicationService.getStudentApplications();
-        setApplications(data.slice(0, 3)); // Only show the 3 most recent applications
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching applications:', err);
-        setError('Failed to load applications');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchApplications();
-  }, []);
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Accepted':
-        return { icon: CheckCircle, color: 'bg-green-100 text-green-800' };
-      case 'Rejected':
-        return { icon: XCircle, color: 'bg-red-100 text-red-800' };
-      case 'Under Review':
-        return { icon: AlertCircle, color: 'bg-amber-100 text-amber-800' };
-      case 'Pending':
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      case 'rejected':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      case 'accepted':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'under review':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      case 'interview':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+      case 'shortlisted':
+        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300';
       default:
-        return { icon: Clock, color: 'bg-blue-100 text-blue-800' };
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-800">Recent Applications</h2>
-        </div>
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="vs-card">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Skeleton className="h-5 w-36 mb-2" />
-                    <Skeleton className="h-4 w-24" />
-                  </div>
-                  <Skeleton className="h-6 w-20 rounded-full" />
-                </div>
-                <div className="mt-2">
-                  <Skeleton className="h-4 w-32" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-800">Recent Applications</h2>
-          <a href="/student/applications" className="text-vs-green-600 hover:text-vs-green-700 text-sm font-medium">
-            View All
-          </a>
-        </div>
-        <Card className="vs-card">
-          <CardContent className="p-6 text-center">
-            <p className="text-red-500">{error}</p>
-            <p className="mt-2 text-gray-600">Please try again later</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (applications.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-800">Recent Applications</h2>
-          <a href="/student/applications" className="text-vs-green-600 hover:text-vs-green-700 text-sm font-medium">
-            View All
-          </a>
-        </div>
-        <Card className="vs-card">
-          <CardContent className="p-6 text-center">
-            <p className="text-gray-600">No applications found</p>
-            <p className="mt-2 text-gray-500">Start applying for opportunities!</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-800">Recent Applications</h2>
-        <a href="/student/applications" className="text-vs-green-600 hover:text-vs-green-700 text-sm font-medium">
-          View All
-        </a>
-      </div>
-
-      <div className="space-y-4">
-        {applications.map((application) => {
-          const { icon: StatusIcon, color: statusColor } = getStatusIcon(application.status);
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg">Application Tracker</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="all" onValueChange={setActiveTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="pending">Pending</TabsTrigger>
+            <TabsTrigger value="under review">Under Review</TabsTrigger>
+            <TabsTrigger value="interview">Interview</TabsTrigger>
+          </TabsList>
           
-          let opportunityTitle = 'Opportunity';
-          let organizationName = '';
-          
-          if (typeof application.opportunity !== 'string') {
-            opportunityTitle = application.opportunity.title || 'Opportunity';
-            
-            if (application.opportunity.organization) {
-              if (typeof application.opportunity.organization === 'string') {
-                organizationName = application.opportunity.organization;
-              } else {
-                organizationName = application.opportunity.organization.organization || 
-                                  application.opportunity.organization.name || '';
-              }
-            }
-          }
-
-          return (
-            <Card key={application.id || application._id} className="vs-card">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-base font-medium text-gray-900">{opportunityTitle}</h3>
-                    <p className="text-sm text-gray-600">{organizationName}</p>
+          <TabsContent value={activeTab} className="space-y-4">
+            {isLoading ? (
+              <div className="py-6 text-center text-gray-500 dark:text-gray-400">
+                Loading applications...
+              </div>
+            ) : !applications || applications.length === 0 ? (
+              <div className="py-6 text-center text-gray-500 dark:text-gray-400">
+                No applications found. Start applying for opportunities!
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {applications.slice(0, 5).map((application: Application) => (
+                  <div key={application._id} className="border rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium">
+                          {typeof application.opportunity !== 'string' ? application.opportunity?.title : 'Unknown Opportunity'}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {typeof application.opportunity !== 'string' ? application.opportunity?.organization : 'Unknown Organization'}
+                        </p>
+                      </div>
+                      <Badge className={getStatusColor(application.status)}>
+                        {application.status}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-600 dark:text-gray-300">
+                      <div className="flex items-center">
+                        <FileTextIcon className="h-3.5 w-3.5 mr-1" />
+                        <span>Applied: {formatDate(application.appliedDate.toString())}</span>
+                      </div>
+                      
+                      {application.interviewDate && (
+                        <div className="flex items-center">
+                          <CalendarIcon className="h-3.5 w-3.5 mr-1" />
+                          <span>Interview: {formatDate(application.interviewDate.toString())}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Application Progress */}
+                    <div className="mt-2">
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-gray-500 dark:text-gray-400">Application Progress</span>
+                        <span className="text-gray-500 dark:text-gray-400">
+                          {application.status === 'Pending' ? '25%' : 
+                           application.status === 'Under Review' ? '50%' : 
+                           application.status === 'Interview' ? '75%' : '100%'}
+                        </span>
+                      </div>
+                      <Progress 
+                        value={
+                          application.status === 'Pending' ? 25 : 
+                          application.status === 'Under Review' ? 50 : 
+                          application.status === 'Interview' ? 75 : 100
+                        } 
+                        className="h-1" 
+                      />
+                    </div>
                   </div>
-                  <Badge 
-                    variant="outline" 
-                    className={`${statusColor} flex items-center gap-1`}
-                  >
-                    <StatusIcon className="h-3 w-3" />
-                    {application.status}
-                  </Badge>
-                </div>
-                <div className="mt-2 flex items-center text-xs text-gray-500">
-                  <Calendar className="h-3.5 w-3.5 mr-1" />
-                  Applied on {new Date(application.appliedDate).toLocaleDateString()}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
+                ))}
+                
+                {applications.length > 5 && (
+                  <div className="text-center text-xs text-gray-500 dark:text-gray-400">
+                    +{applications.length - 5} more application(s)
+                  </div>
+                )}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };
 

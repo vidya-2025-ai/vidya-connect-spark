@@ -1,128 +1,77 @@
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Briefcase, CheckCircle, Clock, Award } from 'lucide-react';
-import { applicationService } from '@/services/api/applicationService';
-import { certificateService } from '@/services/api/certificateService';
-import { Skeleton } from '@/components/ui/skeleton';
 
-const StudentStats = () => {
-  const [stats, setStats] = useState({
-    applications: 0,
-    inProgress: 0,
-    completed: 0,
-    certificates: 0,
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BriefcaseIcon, CalendarIcon, FileCheckIcon, BookOpenIcon } from 'lucide-react';
+import dashboardService from '@/services/api/dashboardService';
+
+const StudentStats: React.FC = () => {
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['studentDashboardStats'],
+    queryFn: dashboardService.getStudentDashboard,
   });
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setIsLoading(true);
-        // Fetch applications
-        const applications = await applicationService.getStudentApplications();
-        
-        // Fetch certificates
-        const certificates = await certificateService.getAllCertificates();
-        
-        // Calculate stats
-        const inProgress = applications.filter(app => 
-          app.status === 'Pending' || app.status === 'Under Review'
-        ).length;
-        
-        const completed = applications.filter(app => 
-          app.status === 'Accepted' || app.status === 'Rejected'
-        ).length;
-        
-        // Set stats including certificate count
-        setStats({
-          applications: applications.length,
-          inProgress,
-          completed,
-          certificates: certificates.length,
-        });
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-        // Set default values in case of error
-        setStats({
-          applications: 0,
-          inProgress: 0,
-          completed: 0,
-          certificates: 0,
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="vs-card">
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <div className="p-2 rounded-full bg-gray-100 mr-3">
-                  <Skeleton className="h-5 w-5" />
-                </div>
-                <div>
-                  <Skeleton className="h-6 w-8 mb-1" />
-                  <Skeleton className="h-4 w-16" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
-  const statsConfig = [
-    {
-      name: 'Applications',
-      value: stats.applications.toString(),
-      icon: Briefcase,
-      iconColor: 'bg-vs-green-100 text-vs-green-600'
-    },
-    {
-      name: 'In Progress',
-      value: stats.inProgress.toString(),
-      icon: Clock,
-      iconColor: 'bg-amber-100 text-amber-600'
-    },
-    {
-      name: 'Completed',
-      value: stats.completed.toString(),
-      icon: CheckCircle,
-      iconColor: 'bg-blue-100 text-blue-600'
-    },
-    {
-      name: 'Certificates',
-      value: stats.certificates.toString(),
-      icon: Award,
-      iconColor: 'bg-vs-purple-100 text-vs-purple-600'
-    }
-  ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {statsConfig.map((stat) => (
-        <Card key={stat.name} className="vs-card">
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <div className={`p-2 rounded-full ${stat.iconColor} mr-3`}>
-                <stat.icon className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
-                <p className="text-sm text-gray-600">{stat.name}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Applications Sent</CardTitle>
+          <BriefcaseIcon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {isLoading ? "Loading..." : stats?.applicationsSent || 0}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {((stats?.applicationsSent || 0) > 0) ? "Track your applications progress" : "Start applying to opportunities"}
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Upcoming Interviews</CardTitle>
+          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {isLoading ? "Loading..." : stats?.interviewsScheduled || 0}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {((stats?.interviewsScheduled || 0) > 0) ? "Prepare for your interviews" : "No upcoming interviews"}
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Saved Opportunities</CardTitle>
+          <FileCheckIcon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {isLoading ? "Loading..." : stats?.savedOpportunities || 0}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {((stats?.savedOpportunities || 0) > 0) ? "Review your saved opportunities" : "Save opportunities for later"}
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Completed Internships</CardTitle>
+          <BookOpenIcon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {isLoading ? "Loading..." : stats?.completedInternships || 0}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {((stats?.completedInternships || 0) > 0) ? "View your experience history" : "Complete internships to build your resume"}
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 };

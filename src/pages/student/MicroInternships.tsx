@@ -1,242 +1,204 @@
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import StudentSidebar from '@/components/dashboard/StudentSidebar';
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
-import { microInternshipService } from '@/services/api';
-import { useAuth } from '@/hooks/useAuth';
-
-interface MicroInternship {
-  id: string;
-  title: string;
-  description: string;
-  organization: string;
-  duration: string;
-  skillsRequired: string[];
-  stipend: {
-    amount: number;
-    currency: string;
-  };
-  deadline: string;
-  applicants: number;
-  createdAt: string;
-}
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, Clock, Calendar, User } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { useToast } from '@/hooks/use-toast';
+import microInternshipService from '@/services/api/microInternshipService';
 
 const MicroInternships: React.FC = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [selectedInternship, setSelectedInternship] = useState<MicroInternship | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [coverLetter, setCoverLetter] = useState('');
-
-  // Fetch all micro-internships
-  const { data: microInternships, isLoading, error } = useQuery({
-    queryKey: ['microInternships'],
-    queryFn: microInternshipService.getAllMicroInternships,
-  });
-
-  // Apply to micro-internship mutation
-  const applyMutation = useMutation({
-    mutationFn: (internshipId: string) => 
-      microInternshipService.applyToMicroInternship(internshipId),
-    onSuccess: () => {
-      setIsDialogOpen(false);
-      setCoverLetter('');
-      queryClient.invalidateQueries({ queryKey: ['microInternships'] });
-      toast({
-        title: "Application Submitted",
-        description: "Your application has been submitted successfully!",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Application Failed",
-        description: error.response?.data?.message || "Failed to submit application. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Handle apply button click
-  const handleApply = (internship: MicroInternship) => {
-    if (!user) {
-      toast({
-        title: "Not Logged In",
-        description: "Please log in to apply for micro-internships.",
-        variant: "destructive",
-      });
-      return;
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('available');
+  
+  const { data: microInternships, isLoading, isError } = useQuery({
+    queryKey: ['microInternships', activeTab],
+    queryFn: () => microInternshipService.getMicroInternships({ status: activeTab }),
+    meta: {
+      onSettled: (data, error) => {
+        if (error) {
+          toast({
+            title: "Error",
+            description: "Failed to load micro-internships.",
+            variant: "destructive"
+          });
+        }
+      }
     }
-    
-    setSelectedInternship(internship);
-    setIsDialogOpen(true);
-  };
+  });
 
-  // Submit application
-  const submitApplication = () => {
-    if (!selectedInternship) return;
-    applyMutation.mutate(selectedInternship.id);
-  };
-
-  // Format deadline date
-  const formatDeadline = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+  // Handle search
+  const handleSearch = () => {
+    // Implement search functionality
+    toast({
+      title: "Search",
+      description: `Searching for "${searchTerm}"...`,
     });
   };
 
-  // Remaining days calculation
-  const getRemainingDays = (deadlineString: string) => {
-    const deadline = new Date(deadlineString);
-    const now = new Date();
-    const diffTime = deadline.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
+  // Handle apply to micro-internship
+  const handleApply = async (internshipId: string) => {
+    try {
+      await microInternshipService.applyToMicroInternship(internshipId, {});
+      toast({
+        title: "Application Submitted",
+        description: "Your application has been successfully submitted.",
+      });
+    } catch (error) {
+      toast({
+        title: "Application Failed",
+        description: "There was an error submitting your application. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Format date 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
-      <StudentSidebar />
+      <StudentSidebar 
+        isMobileMenuOpen={isMobileMenuOpen} 
+        setIsMobileMenuOpen={setIsMobileMenuOpen} 
+      />
+      
       <div className="flex-1 overflow-auto">
-        <div className="py-6">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Micro-Internships
-                </h1>
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                  Short-term projects to gain practical experience
-                </p>
+        <div className="py-6 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-6">
+              <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                Micro-Internships
+              </h1>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Short-term, project-based experiences that can be completed remotely
+              </p>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
+              <div className="w-full sm:w-auto flex items-center space-x-2">
+                <div className="relative w-full sm:w-80">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
+                  <Input
+                    placeholder="Search micro-internships..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    className="pl-10"
+                  />
+                </div>
+                <Button onClick={handleSearch}>Search</Button>
               </div>
             </div>
-
-            {isLoading ? (
-              <div className="flex justify-center items-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : error ? (
-              <div className="text-center p-8 text-red-500">
-                Failed to load micro-internships. Please try again.
-              </div>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {microInternships?.map((internship: MicroInternship) => (
-                  <Card key={internship.id} className="hover:shadow-lg transition-shadow">
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-semibold text-lg">{internship.title}</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{internship.organization}</p>
-                        </div>
-                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
-                          {internship.duration}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2 mb-4">
-                        {internship.description}
-                      </p>
-                      
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Skills Required</p>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {internship.skillsRequired.map((skill, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
+            
+            <Tabs defaultValue="available" onValueChange={setActiveTab}>
+              <TabsList className="mb-6">
+                <TabsTrigger value="available">Available</TabsTrigger>
+                <TabsTrigger value="applied">My Applications</TabsTrigger>
+                <TabsTrigger value="active">Active Projects</TabsTrigger>
+                <TabsTrigger value="completed">Completed</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value={activeTab}>
+                {isLoading ? (
+                  <div className="flex justify-center items-center h-64">
+                    <p className="text-gray-500 dark:text-gray-400">Loading micro-internships...</p>
+                  </div>
+                ) : isError ? (
+                  <div className="flex justify-center items-center h-64">
+                    <p className="text-red-500">Failed to load micro-internships. Please try again.</p>
+                  </div>
+                ) : !microInternships || microInternships.length === 0 ? (
+                  <div className="flex justify-center items-center h-64">
+                    <p className="text-gray-500 dark:text-gray-400">
+                      {activeTab === 'available' 
+                        ? 'No micro-internships currently available.' 
+                        : activeTab === 'applied'
+                        ? 'You have not applied to any micro-internships yet.'
+                        : activeTab === 'active'
+                        ? 'You do not have any active micro-internship projects.'
+                        : 'You have not completed any micro-internships yet.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {microInternships.map((internship) => (
+                      <Card key={internship.id} className="hover:shadow-md transition-shadow">
+                        <CardHeader className="pb-2">
+                          <div className="flex justify-between items-start">
+                            <CardTitle className="text-lg font-semibold">{internship.title}</CardTitle>
+                            <Badge>{internship.category}</Badge>
+                          </div>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{internship.company}</p>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm line-clamp-3 mb-4">
+                            {internship.description}
+                          </p>
+                          
+                          <div className="space-y-2 text-sm mb-4">
+                            <div className="flex items-center">
+                              <Clock className="w-4 h-4 mr-2 text-gray-500 dark:text-gray-400" />
+                              <span>{internship.duration} hours</span>
+                            </div>
+                            <div className="flex items-center">
+                              <Calendar className="w-4 h-4 mr-2 text-gray-500 dark:text-gray-400" />
+                              <span>Deadline: {formatDate(internship.deadline)}</span>
+                            </div>
+                            <div className="flex items-center">
+                              <User className="w-4 h-4 mr-2 text-gray-500 dark:text-gray-400" />
+                              <span>{internship.applicants || 0} applicants</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {internship.skills.slice(0, 3).map((skill, idx) => (
+                              <Badge key={idx} variant="secondary" className="text-xs">
                                 {skill}
                               </Badge>
                             ))}
-                          </div>
-                        </div>
-                        
-                        <div className="flex justify-between">
-                          <div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Stipend</p>
-                            <p className="font-medium">
-                              {internship.stipend.amount > 0 
-                                ? `${internship.stipend.amount} ${internship.stipend.currency}` 
-                                : 'Unpaid'}
-                            </p>
+                            {internship.skills.length > 3 && (
+                              <Badge variant="secondary" className="text-xs">
+                                +{internship.skills.length - 3} more
+                              </Badge>
+                            )}
                           </div>
                           
-                          <div className="text-right">
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Deadline</p>
-                            <p className="font-medium">{formatDeadline(internship.deadline)}</p>
-                            <p className="text-xs text-amber-600">
-                              {getRemainingDays(internship.deadline)} days remaining
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex justify-between items-center pt-2">
-                      <p className="text-xs text-gray-500">
-                        {internship.applicants} {internship.applicants === 1 ? 'applicant' : 'applicants'}
-                      </p>
-                      <Button onClick={() => handleApply(internship)}>Apply Now</Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-                
-                {microInternships?.length === 0 && (
-                  <div className="col-span-full text-center p-12 border rounded-lg">
-                    <p className="text-gray-600 dark:text-gray-400">No micro-internships available at the moment.</p>
+                          {activeTab === 'available' ? (
+                            <Button 
+                              className="w-full" 
+                              onClick={() => handleApply(internship.id)}
+                            >
+                              Apply Now
+                            </Button>
+                          ) : activeTab === 'applied' ? (
+                            <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+                              Applied on {formatDate(internship.appliedDate || new Date().toISOString())}
+                            </div>
+                          ) : activeTab === 'active' ? (
+                            <Button className="w-full">Continue Project</Button>
+                          ) : (
+                            <Button variant="outline" className="w-full">View Certificate</Button>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
                 )}
-              </div>
-            )}
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>
-
-      {/* Application Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Apply for {selectedInternship?.title}</DialogTitle>
-            <DialogDescription>
-              Submit your application for this micro-internship at {selectedInternship?.organization}.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">Cover Letter</h4>
-              <Textarea
-                placeholder="Tell the recruiter why you're interested in this opportunity..."
-                value={coverLetter}
-                onChange={(e) => setCoverLetter(e.target.value)}
-                className="min-h-[120px]"
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={submitApplication}
-              disabled={applyMutation.isPending}
-            >
-              {applyMutation.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Submit Application
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

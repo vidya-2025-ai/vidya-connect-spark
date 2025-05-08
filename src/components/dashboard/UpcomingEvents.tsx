@@ -1,84 +1,100 @@
 
 import React from 'react';
-import { 
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle 
-} from '@/components/ui/card';
-import { CalendarIcon, Clock, Users, Video } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Clock, MapPin, Video } from 'lucide-react';
+import calendarService from '@/services/api/calendarService';
+import { Event } from '@/services/api/types';
 
-const events = [
-  {
-    id: 1,
-    title: 'Mentor Session with Rajesh Kumar',
-    date: 'Apr 10, 2025',
-    time: '3:00 PM - 4:00 PM',
-    type: 'Mentorship',
-    typeIcon: Users,
-    typeColor: 'text-vs-purple-600'
-  },
-  {
-    id: 2,
-    title: 'Project Submission Deadline',
-    date: 'Apr 15, 2025',
-    time: '11:59 PM',
-    type: 'Deadline',
-    typeIcon: Clock,
-    typeColor: 'text-vs-orange-500'
-  },
-  {
-    id: 3,
-    title: 'Webinar: Climate Tech Innovations',
-    date: 'Apr 18, 2025',
-    time: '5:00 PM - 6:30 PM',
-    type: 'Webinar',
-    typeIcon: Video,
-    typeColor: 'text-blue-600'
-  }
-];
+const UpcomingEvents: React.FC = () => {
+  const { data: events, isLoading } = useQuery({
+    queryKey: ['upcomingEvents'],
+    queryFn: calendarService.getUpcomingEvents,
+  });
 
-const UpcomingEvents = () => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+  
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  };
+  
+  const getEventTypeColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'interview':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+      case 'workshop':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      case 'webinar':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-800">Upcoming Events</h2>
-        <a href="/student/calendar" className="text-vs-green-600 hover:text-vs-green-700 text-sm font-medium">
-          View Calendar
-        </a>
-      </div>
-
-      <div className="space-y-4">
-        {events.map((event) => (
-          <Card key={event.id} className="vs-card">
-            <CardContent className="p-4">
-              <div className="flex">
-                <div className="flex-shrink-0 flex flex-col items-center justify-center mr-4 bg-gray-50 rounded-lg p-2 w-14">
-                  <CalendarIcon className="h-5 w-5 text-gray-400 mb-1" />
-                  <span className="text-xs font-medium text-gray-900">
-                    {event.date.split(',')[0]}
-                  </span>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center">
-                    <event.typeIcon className={`h-4 w-4 mr-1 ${event.typeColor}`} />
-                    <span className={`text-xs font-medium ${event.typeColor}`}>
-                      {event.type}
-                    </span>
+    <Card>
+      <CardHeader>
+        <CardTitle>Upcoming Events</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="py-6 text-center text-gray-500 dark:text-gray-400">
+            Loading events...
+          </div>
+        ) : !events || events.length === 0 ? (
+          <div className="py-6 text-center text-gray-500 dark:text-gray-400">
+            No upcoming events. Check back soon!
+          </div>
+        ) : (
+          <div className="divide-y dark:divide-gray-700">
+            {events.map((event: Event) => (
+              <div key={event._id || event.id} className="py-4 first:pt-0 last:pb-0">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-medium">{event.title}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{event.description}</p>
                   </div>
-                  <h3 className="text-base font-medium text-gray-900 mt-1">{event.title}</h3>
-                  <div className="mt-1 flex items-center text-xs text-gray-500">
-                    <Clock className="h-3.5 w-3.5 mr-1" />
-                    {event.time}
+                  <Badge className={getEventTypeColor(event.type)}>
+                    {event.type}
+                  </Badge>
+                </div>
+                
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                  <div className="flex items-center text-gray-600 dark:text-gray-300">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    <span>{formatDate(event.startTime.toString())}</span>
+                  </div>
+                  
+                  <div className="flex items-center text-gray-600 dark:text-gray-300">
+                    <Clock className="h-4 w-4 mr-2" />
+                    <span>{formatTime(event.startTime.toString())} - {formatTime(event.endTime.toString())}</span>
+                  </div>
+                  
+                  <div className="flex items-center text-gray-600 dark:text-gray-300">
+                    {event.isVirtual ? (
+                      <>
+                        <Video className="h-4 w-4 mr-2" />
+                        <span>Virtual</span>
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="h-4 w-4 mr-2" />
+                        <span>{event.location || 'Location not specified'}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

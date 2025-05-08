@@ -1,120 +1,99 @@
 
 import React from 'react';
-import { 
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle 
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Briefcase, Star, Clock } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, ArrowRight } from 'lucide-react';
+import { Opportunity } from '@/services/api/types';
+import opportunityService from '@/services/api/opportunityService';
 
-const opportunities = [
-  {
-    id: 1,
-    title: 'Environmental Impact Research Assistant',
-    organization: 'Green Earth Foundation',
-    type: 'Internship',
-    location: 'Remote',
-    duration: '3 months',
-    matchScore: 92,
-    category: 'Environmental',
-    isNew: true
-  },
-  {
-    id: 2,
-    title: 'Mobile App Developer for Education Platform',
-    organization: 'LearnTech Startup',
-    type: 'Project',
-    location: 'Hybrid',
-    duration: '2 months',
-    matchScore: 88,
-    category: 'Technology',
-    isNew: true
-  },
-  {
-    id: 3,
-    title: 'Community Outreach Coordinator',
-    organization: 'Village Empowerment Trust',
-    type: 'Internship',
-    location: 'On-site',
-    duration: '4 months',
-    matchScore: 85,
-    category: 'Social Work',
-    isNew: false
-  },
-  {
-    id: 4,
-    title: 'Content Creator for Social Media',
-    organization: 'Digital Rights NGO',
-    type: 'Project',
-    location: 'Remote',
-    duration: '1 month',
-    matchScore: 81,
-    category: 'Digital Media',
-    isNew: false
-  }
-];
+const RecommendedOpportunities: React.FC = () => {
+  const navigate = useNavigate();
+  
+  const { data: opportunities, isLoading } = useQuery({
+    queryKey: ['recommendedOpportunities'],
+    queryFn: opportunityService.getRecommendedOpportunities,
+  });
+  
+  const handleViewDetails = (id: string) => {
+    navigate(`/student/opportunities/${id}`);
+  };
+  
+  const handleViewAll = () => {
+    navigate('/student/explore-opportunities');
+  };
 
-const RecommendedOpportunities = () => {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-800">Recommended For You</h2>
-        <a href="/student/explore" className="text-vs-green-600 hover:text-vs-green-700 text-sm font-medium">
-          View All
-        </a>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        {opportunities.map((opportunity) => (
-          <Card key={opportunity.id} className="vs-card">
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{opportunity.title}</CardTitle>
-                  <CardDescription>{opportunity.organization}</CardDescription>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Badge variant="outline" className="bg-vs-purple-50 text-vs-purple-700 border-vs-purple-200">
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg">Recommended For You</CardTitle>
+          <Button 
+            variant="ghost" 
+            className="flex items-center text-sm" 
+            onClick={handleViewAll}
+          >
+            View All
+            <ArrowRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="py-6 text-center text-gray-500 dark:text-gray-400">
+            Loading recommendations...
+          </div>
+        ) : !opportunities || opportunities.length === 0 ? (
+          <div className="py-6 text-center text-gray-500 dark:text-gray-400">
+            No recommendations available yet. Complete your profile to get personalized recommendations.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {opportunities.map((opportunity: Opportunity) => (
+              <div key={opportunity.id || opportunity._id} className="border rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-medium">{opportunity.title}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{opportunity.organization}</p>
+                  </div>
+                  <Badge variant={opportunity.type === 'Internship' ? 'default' : 'outline'}>
                     {opportunity.type}
                   </Badge>
-                  {opportunity.isNew && (
-                    <Badge className="bg-vs-green-500">New</Badge>
+                </div>
+                
+                <div className="flex items-center mt-2 text-sm text-gray-600 dark:text-gray-300">
+                  <MapPin className="h-3.5 w-3.5 mr-1" />
+                  <span>{opportunity.location}</span>
+                </div>
+                
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {opportunity.skillsRequired && opportunity.skillsRequired.slice(0, 3).map((skill, idx) => (
+                    <Badge key={idx} variant="secondary" className="text-xs">
+                      {skill}
+                    </Badge>
+                  ))}
+                  {opportunity.skillsRequired && opportunity.skillsRequired.length > 3 && (
+                    <Badge variant="secondary" className="text-xs">
+                      +{opportunity.skillsRequired.length - 3} more
+                    </Badge>
                   )}
                 </div>
+                
+                <Button 
+                  className="w-full mt-3" 
+                  size="sm"
+                  onClick={() => handleViewDetails(opportunity._id || opportunity.id)}
+                >
+                  View Details
+                </Button>
               </div>
-            </CardHeader>
-            <CardContent className="pb-2">
-              <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
-                <div className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                  {opportunity.location}
-                </div>
-                <div className="flex items-center">
-                  <Clock className="h-4 w-4 mr-2 text-gray-400" />
-                  {opportunity.duration}
-                </div>
-                <div className="flex items-center">
-                  <Briefcase className="h-4 w-4 mr-2 text-gray-400" />
-                  {opportunity.category}
-                </div>
-                <div className="flex items-center">
-                  <Star className="h-4 w-4 mr-2 text-yellow-500" />
-                  <span>{opportunity.matchScore}% Match</span>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full vs-btn-primary">View Details</Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-    </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

@@ -2,57 +2,53 @@
 import api from './index';
 import { Application, PaginatedResponse } from './types';
 
-export interface ApplicationFilters {
-  status?: string;
-  page?: number;
-  limit?: number;
-  search?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
-
-export interface ApplicationReview {
-  strengths: string[];
-  weaknesses: string[];
-  overallAssessment: string;
-  recommendationLevel: 'Highly Recommended' | 'Recommended' | 'Neutral' | 'Not Recommended';
-}
-
-export const applicationService = {
-  getStudentApplications: async (filters: ApplicationFilters = {}): Promise<Application[]> => {
+const applicationService = {
+  getApplicationsByOpportunity: async (opportunityId: string, status?: string): Promise<Application[]> => {
     try {
-      const response = await api.get<PaginatedResponse<Application>>('/applications', { params: filters });
-      return response.data.data || response.data.applications || [];
+      const response = await api.get<Application[]>(`/applications/opportunity/${opportunityId}`, {
+        params: { status }
+      });
+      return response.data;
     } catch (error) {
-      console.error('Error fetching student applications:', error);
-      // Return mock data if backend is unavailable
+      console.error('Error fetching applications by opportunity:', error);
       return [];
     }
   },
   
-  getRecruiterApplications: async (filters: ApplicationFilters = {}): Promise<Application[]> => {
+  getStudentApplications: async (filters: { status?: string, sortBy?: string, sortOrder?: 'asc' | 'desc' } = {}): Promise<Application[]> => {
+    try {
+      const response = await api.get<Application[]>('/applications/student', { params: filters });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching student applications:', error);
+      return [];
+    }
+  },
+  
+  getRecruiterApplications: async (filters: { 
+    status?: string, 
+    page?: number, 
+    limit?: number, 
+    sortBy?: string, 
+    sortOrder?: 'asc' | 'desc',
+    search?: string
+  } = {}): Promise<Application[]> => {
     try {
       const response = await api.get<PaginatedResponse<Application>>('/applications/recruiter', { params: filters });
-      return response.data.data || response.data.applications || [];
+      return response.data.data;
     } catch (error) {
       console.error('Error fetching recruiter applications:', error);
       return [];
     }
   },
   
-  getOpportunityApplications: async (
-    opportunityId: string, 
-    filters: ApplicationFilters = {}
-  ): Promise<Application[]> => {
+  getApplicationById: async (id: string): Promise<Application> => {
     try {
-      const response = await api.get<PaginatedResponse<Application>>(
-        `/applications/opportunity/${opportunityId}`, 
-        { params: filters }
-      );
-      return response.data.data || response.data.applications || [];
+      const response = await api.get<Application>(`/applications/${id}`);
+      return response.data;
     } catch (error) {
-      console.error('Error fetching opportunity applications:', error);
-      return [];
+      console.error('Error fetching application by id:', error);
+      throw error;
     }
   },
   
@@ -66,9 +62,9 @@ export const applicationService = {
     }
   },
   
-  updateApplicationStatus: async (id: string, status: string): Promise<Application> => {
+  updateApplicationStatus: async (applicationId: string, status: string): Promise<Application> => {
     try {
-      const response = await api.put<Application>(`/applications/${id}/status`, { status });
+      const response = await api.put<Application>(`/applications/${applicationId}/status`, { status });
       return response.data;
     } catch (error) {
       console.error('Error updating application status:', error);
@@ -76,29 +72,25 @@ export const applicationService = {
     }
   },
   
-  getApplicationDetails: async (id: string): Promise<Application> => {
+  addApplicationNote: async (applicationId: string, note: string): Promise<{ message: string }> => {
     try {
-      const response = await api.get<Application>(`/applications/${id}`);
+      const response = await api.post<{ message: string }>(`/applications/${applicationId}/notes`, { note });
       return response.data;
     } catch (error) {
-      console.error('Error fetching application details:', error);
+      console.error('Error adding application note:', error);
       throw error;
     }
   },
   
-  addNote: async (id: string, note: string): Promise<Application> => {
+  scheduleInterview: async (applicationId: string, interviewData: {
+    date: string;
+    time: string;
+    location?: string;
+    interviewers?: string[];
+    type: string;
+  }): Promise<Application> => {
     try {
-      const response = await api.post<Application>(`/applications/${id}/notes`, { note });
-      return response.data;
-    } catch (error) {
-      console.error('Error adding note to application:', error);
-      throw error;
-    }
-  },
-  
-  scheduleInterview: async (id: string, interviewDate: string): Promise<Application> => {
-    try {
-      const response = await api.put<Application>(`/applications/${id}/interview`, { interviewDate });
+      const response = await api.post<Application>(`/applications/${applicationId}/interview`, interviewData);
       return response.data;
     } catch (error) {
       console.error('Error scheduling interview:', error);
@@ -106,61 +98,43 @@ export const applicationService = {
     }
   },
   
-  addFeedback: async (id: string, feedback: string, rating?: number): Promise<Application> => {
+  withdrawApplication: async (applicationId: string): Promise<{ message: string }> => {
     try {
-      const response = await api.post<Application>(`/applications/${id}/feedback`, { feedback, rating });
+      const response = await api.put<{ message: string }>(`/applications/${applicationId}/withdraw`);
       return response.data;
     } catch (error) {
-      console.error('Error adding feedback:', error);
-      throw error;
-    }
-  },
-
-  addReview: async (id: string, review: ApplicationReview): Promise<Application> => {
-    try {
-      const response = await api.post<Application>(`/applications/${id}/review`, review);
-      return response.data;
-    } catch (error) {
-      console.error('Error adding review:', error);
+      console.error('Error withdrawing application:', error);
       throw error;
     }
   },
   
-  getApplicationsByStatus: async (status: string): Promise<Application[]> => {
-    try {
-      const response = await api.get<PaginatedResponse<Application>>('/applications/recruiter', { 
-        params: { status } 
-      });
-      return response.data.data || response.data.applications || [];
-    } catch (error) {
-      console.error('Error fetching applications by status:', error);
-      return [];
-    }
-  },
-  
-  getApplicationStats: async (): Promise<{
-    total: number;
-    pending: number;
-    underReview: number;
-    shortlisted: number;
-    interview: number;
-    accepted: number;
-    rejected: number;
+  getApplicationStatistics: async (): Promise<{
+    totalApplications: number;
+    byStatus: Record<string, number>;
+    recentApplications: Application[];
+    interviewsUpcoming: number;
   }> => {
     try {
-      const response = await api.get('/applications/recruiter/stats');
+      const response = await api.get('/applications/statistics');
       return response.data;
     } catch (error) {
-      console.error('Error fetching application stats:', error);
+      console.error('Error fetching application statistics:', error);
       return {
-        total: 0,
-        pending: 0,
-        underReview: 0,
-        shortlisted: 0,
-        interview: 0,
-        accepted: 0,
-        rejected: 0
+        totalApplications: 0,
+        byStatus: {},
+        recentApplications: [],
+        interviewsUpcoming: 0
       };
+    }
+  },
+  
+  provideFeedback: async (applicationId: string, feedback: string): Promise<Application> => {
+    try {
+      const response = await api.post<Application>(`/applications/${applicationId}/feedback`, { feedback });
+      return response.data;
+    } catch (error) {
+      console.error('Error providing feedback:', error);
+      throw error;
     }
   }
 };

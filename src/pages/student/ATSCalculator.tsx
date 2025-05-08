@@ -1,298 +1,314 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+
+import React, { useState } from 'react';
 import StudentSidebar from '@/components/dashboard/StudentSidebar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { atsService } from '@/services/api/atsService';
-import { resumeService } from '@/services/api/resumeService';
-import { opportunityService } from '@/services/api/opportunityService';
-import { Resume, Opportunity } from '@/services/api/types';
-import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from '@/components/ui/use-toast';
-import { FileCheck, AlertCircle, CheckCircle, XCircle, Briefcase } from "lucide-react";
+import { useMutation } from '@tanstack/react-query';
+import { FileText, Upload, CheckCircle, XCircle, Info, AlertCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import atsService from '@/services/api/atsService';
 
-interface ATSScore {
-  score: number;
-  details?: {
-    matched: number;
-    total: number;
-  };
-}
-
-const ATSCalculator = () => {
-  const [searchParams] = useSearchParams();
-  const opportunityIdFromUrl = searchParams.get('opportunityId');
-
-  const [resumes, setResumes] = useState<Resume[]>([]);
-  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
-  const [selectedResume, setSelectedResume] = useState<string>('');
-  const [selectedOpportunity, setSelectedOpportunity] = useState<string>('');
-  const [score, setScore] = useState<ATSScore | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isCalculating, setIsCalculating] = useState(false);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        // Fetch resumes
-        const resumesData = await resumeService.getAllResumes();
-        setResumes(resumesData);
-
-        // Fetch opportunities
-        const opportunitiesData = await opportunityService.getAllOpportunities();
-        setOpportunities(opportunitiesData);
-        
-        // If opportunity ID is provided in URL, set it as selected
-        if (opportunityIdFromUrl) {
-          setSelectedOpportunity(opportunityIdFromUrl);
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
+const ATSCalculator: React.FC = () => {
+  const { toast } = useToast();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [resumeText, setResumeText] = useState('');
+  const [jobDescription, setJobDescription] = useState('');
+  
+  const { mutate: analyzeResume, isLoading, data: analysis } = useMutation({
+    mutationFn: () => atsService.analyzeResume({
+      resumeText,
+      jobDescription
+    }),
+    meta: {
+      onSuccess: () => {
         toast({
-          title: "Error",
-          description: "Failed to load necessary data. Please try again later.",
+          title: "Analysis Complete",
+          description: "Your resume has been successfully analyzed.",
+        });
+      },
+      onError: () => {
+        toast({
+          title: "Analysis Failed",
+          description: "There was a problem analyzing your resume. Please try again.",
           variant: "destructive"
         });
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    fetchData();
-  }, [opportunityIdFromUrl]);
-
-  // Auto-calculate score when both resume and opportunity are selected
-  useEffect(() => {
-    if (selectedResume && selectedOpportunity && opportunityIdFromUrl) {
-      handleCalculateScore();
     }
-  }, [selectedResume, selectedOpportunity]);
+  });
 
-  const handleCalculateScore = async () => {
-    if (!selectedResume || !selectedOpportunity) {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resumeText || !jobDescription) {
       toast({
-        title: "Error",
-        description: "Please select both a resume and an opportunity",
+        title: "Missing Information",
+        description: "Please provide both your resume content and the job description.",
         variant: "destructive"
       });
       return;
     }
-
-    try {
-      setIsCalculating(true);
-      // We're now passing the opportunity ID instead of parameter ID
-      // The backend will need to extract the relevant criteria from the opportunity
-      const result = await atsService.calculateScoreForOpportunity(selectedResume, selectedOpportunity);
-      setScore(result);
-    } catch (error) {
-      console.error('Error calculating ATS score:', error);
-      toast({
-        title: "Error",
-        description: "Failed to calculate ATS score. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsCalculating(false);
-    }
+    analyzeResume();
   };
-
-  const renderScoreFeedback = (score: number) => {
-    if (score >= 80) {
-      return (
-        <div className="flex items-center text-green-600">
-          <CheckCircle className="mr-2 h-5 w-5" />
-          <span>Excellent match! Your resume is well-aligned with this opportunity.</span>
-        </div>
-      );
-    } else if (score >= 60) {
-      return (
-        <div className="flex items-center text-amber-600">
-          <AlertCircle className="mr-2 h-5 w-5" />
-          <span>Good match, but there's room for improvement.</span>
-        </div>
-      );
-    } else {
-      return (
-        <div className="flex items-center text-red-600">
-          <XCircle className="mr-2 h-5 w-5" />
-          <span>Your resume needs significant improvements to match this opportunity.</span>
-        </div>
-      );
-    }
+  
+  const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // In a real implementation, this would parse the document
+    // For now, we'll just show a toast notification
+    toast({
+      title: "Resume Uploaded",
+      description: "Your resume has been uploaded successfully.",
+    });
+    
+    // Simulate parsing text from the resume
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      setResumeText(text || 'Sample resume content from uploaded file');
+    };
+    reader.readAsText(file);
   };
-
-  if (isLoading) {
-    return (
-      <div className="h-screen flex overflow-hidden bg-gray-50">
-        <StudentSidebar />
-        <div className="flex-1 overflow-auto p-6">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-2xl font-semibold text-gray-900 mb-6">ATS Score Calculator</h1>
-            <Card>
-              <CardHeader>
-                <CardTitle><Skeleton className="h-6 w-3/4" /></CardTitle>
-                <CardDescription><Skeleton className="h-4 w-full" /></CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <Skeleton className="h-5 w-32" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                  <div className="space-y-2">
-                    <Skeleton className="h-5 w-32" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                  <Skeleton className="h-10 w-32" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  
+  const handleJobDescriptionUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    toast({
+      title: "Job Description Uploaded",
+      description: "The job description has been uploaded successfully.",
+    });
+    
+    // Simulate parsing text
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      setJobDescription(text || 'Sample job description from uploaded file');
+    };
+    reader.readAsText(file);
+  };
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-50">
-      <StudentSidebar />
-      <div className="flex-1 overflow-auto p-6">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-6">ATS Score Calculator</h1>
-
-          <div className="mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Calculate Your ATS Score</CardTitle>
-                <CardDescription>
-                  See how well your resume matches specific opportunities by calculating your ATS score
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium">Select Resume</label>
-                    <Select
-                      value={selectedResume}
-                      onValueChange={setSelectedResume}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a resume" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {resumes.length === 0 ? (
-                          <SelectItem value="no_resumes" disabled>No resumes available</SelectItem>
-                        ) : (
-                          resumes.map((resume) => (
-                            <SelectItem key={resume._id} value={resume._id}>
-                              {resume.title}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium">Select Opportunity</label>
-                    <Select
-                      value={selectedOpportunity}
-                      onValueChange={setSelectedOpportunity}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select an opportunity" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {opportunities.length === 0 ? (
-                          <SelectItem value="no_opportunities" disabled>No opportunities available</SelectItem>
-                        ) : (
-                          opportunities.map((opportunity) => (
-                            <SelectItem key={opportunity._id} value={opportunity._id}>
-                              {opportunity.title}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Button
-                    onClick={handleCalculateScore}
-                    disabled={isCalculating || !selectedResume || !selectedOpportunity}
-                  >
-                    {isCalculating ? 'Calculating...' : 'Calculate Score'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {score && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Your ATS Score</CardTitle>
-                <CardDescription>
-                  How well your resume matches the selected opportunity
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span>Match Score</span>
-                      <span className="font-semibold">{score.score}%</span>
-                    </div>
-                    <Progress value={score.score} className="h-2" />
-                  </div>
-
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    {renderScoreFeedback(score.score)}
-                  </div>
-
-                  {score.details && (
-                    <div>
-                      <h4 className="font-medium mb-2">Score Details</h4>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex justify-between">
-                          <span>Matched Criteria</span>
-                          <span>{score.details.matched} of {score.details.total}</span>
+    <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
+      <StudentSidebar 
+        isMobileMenuOpen={isMobileMenuOpen} 
+        setIsMobileMenuOpen={setIsMobileMenuOpen} 
+      />
+      
+      <div className="flex-1 overflow-auto">
+        <div className="py-6 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+              ATS Resume Scanner
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">
+              Check if your resume will get past the Applicant Tracking System (ATS)
+            </p>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Resume Analysis</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                      <div>
+                        <label htmlFor="resume-text" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Your Resume Content
+                        </label>
+                        <div className="flex items-center mb-2">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Paste your resume content or
+                          </p>
+                          <div className="relative ml-2">
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm"
+                              className="flex items-center"
+                              onClick={() => document.getElementById('resume-upload')?.click()}
+                            >
+                              <Upload className="h-4 w-4 mr-1" />
+                              Upload Resume
+                            </Button>
+                            <input 
+                              id="resume-upload" 
+                              type="file" 
+                              className="hidden" 
+                              accept=".pdf,.doc,.docx,.txt"
+                              onChange={handleResumeUpload}
+                            />
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span>Match Rate</span>
-                          <span>{Math.round((score.details.matched / score.details.total) * 100)}%</span>
+                        <Textarea
+                          id="resume-text"
+                          value={resumeText}
+                          onChange={(e) => setResumeText(e.target.value)}
+                          placeholder="Paste your resume content here..."
+                          className="min-h-[200px]"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="job-description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Job Description
+                        </label>
+                        <div className="flex items-center mb-2">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Paste the job description or
+                          </p>
+                          <div className="relative ml-2">
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm"
+                              className="flex items-center"
+                              onClick={() => document.getElementById('job-upload')?.click()}
+                            >
+                              <Upload className="h-4 w-4 mr-1" />
+                              Upload Job Description
+                            </Button>
+                            <input 
+                              id="job-upload" 
+                              type="file" 
+                              className="hidden" 
+                              accept=".pdf,.doc,.docx,.txt"
+                              onChange={handleJobDescriptionUpload}
+                            />
+                          </div>
+                        </div>
+                        <Textarea
+                          id="job-description"
+                          value={jobDescription}
+                          onChange={(e) => setJobDescription(e.target.value)}
+                          placeholder="Paste the job description here..."
+                          className="min-h-[150px]"
+                        />
+                      </div>
+                      
+                      <Button 
+                        type="submit" 
+                        disabled={isLoading || !resumeText || !jobDescription}
+                      >
+                        {isLoading ? 'Analyzing...' : 'Analyze Resume'}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>How ATS Works</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                      Most companies use Applicant Tracking Systems (ATS) to filter resumes before a human ever sees them. Our tool helps you optimize your resume to pass through these systems.
+                    </p>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                        </div>
+                        <div className="ml-3">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">Keyword Matching</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            ATS systems scan for industry keywords and skills that match the job description.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <XCircle className="h-5 w-5 text-red-500" />
+                        </div>
+                        <div className="ml-3">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">Formatting Issues</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Complex formatting, tables, and images can confuse ATS systems.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <Info className="h-5 w-5 text-blue-500" />
+                        </div>
+                        <div className="ml-3">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">Section Headers</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Clear section headers like "Experience," "Education," and "Skills" help ATS organize your information.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <AlertCircle className="h-5 w-5 text-yellow-500" />
+                        </div>
+                        <div className="ml-3">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">Tailoring is Key</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Different jobs require different versions of your resume for the best results.
+                          </p>
                         </div>
                       </div>
                     </div>
-                  )}
-
-                  <div className="border-t pt-4">
-                    <h4 className="font-medium mb-2">Recommendations</h4>
-                    <ul className="list-disc pl-5 space-y-1 text-sm">
-                      <li>Include more relevant keywords mentioned in the opportunity description</li>
-                      <li>Format your resume with clear sections and consistent styling</li>
-                      <li>Quantify achievements with specific numbers and metrics</li>
-                      <li>Customize your resume for this specific opportunity</li>
-                    </ul>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {!score && !isCalculating && !isLoading && (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center text-center p-6">
-                <Briefcase className="h-16 w-16 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Score Available</h3>
-                <p className="text-gray-500 mb-4">
-                  Select a resume and opportunity above to calculate your ATS score
-                </p>
-              </CardContent>
-            </Card>
-          )}
+                  </CardContent>
+                </Card>
+                
+                {analysis && (
+                  <Card className="mt-6">
+                    <CardHeader>
+                      <CardTitle>Analysis Results</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-6">
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-sm font-medium">ATS Compatibility Score</span>
+                            <span className="text-sm font-medium">{analysis.score}%</span>
+                          </div>
+                          <Progress value={analysis.score} className="h-2" />
+                        </div>
+                        
+                        <div>
+                          <h4 className="text-sm font-medium mb-2">Missing Keywords</h4>
+                          {analysis.missingKeywords && analysis.missingKeywords.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                              {analysis.missingKeywords.map((keyword, idx) => (
+                                <span key={idx} className="bg-red-100 text-red-800 text-xs font-medium px-2 py-0.5 rounded dark:bg-red-900 dark:text-red-300">
+                                  {keyword}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              Great job! No critical keywords missing.
+                            </p>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <h4 className="text-sm font-medium mb-2">Recommendations</h4>
+                          <ul className="space-y-1 list-disc list-inside text-sm text-gray-700 dark:text-gray-300">
+                            {analysis.recommendations.map((rec, idx) => (
+                              <li key={idx}>{rec}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
